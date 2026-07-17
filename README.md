@@ -91,4 +91,11 @@ CI/CD : GitHub Actions (sqlfluff, dbt build sur PR)
 
 ## Statut
 
-🚧 Projet en cours de démarrage — scaffolding initial en place, implémentation à venir.
+- Ingestion : pipelines dlt `transfermarkt` et `footballdata` opérationnels.
+  `fbref` **bloqué** — FBref sert un challenge Cloudflare interactif à toute requête
+  automatisée (voir [`ingestion/fbref/README.md`](./ingestion/fbref/README.md)).
+- Transformation : staging complet sur `transfermarkt` (12 modèles) ; mart
+  `fct_transfer` avec ROI transfert (`roi_financier`, `cost_per_goal_contribution`)
+  livré et testé (unit tests + tests génériques dbt).
+- Reste à faire : staging/marts sur `footballdata`, orchestration Airflow, dashboard
+  Evidence, CI GitHub Actions.
