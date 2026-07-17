@@ -43,6 +43,9 @@ create role if not exists transformer;
 -- LOADER : écrit uniquement dans RAW (utilisé par dlt) ---------------------
 grant usage on warehouse mercato_wh to role loader;
 grant usage on database raw to role loader;
+grant create schema on database raw to role loader;
+-- dlt émet un CREATE SCHEMA IF NOT EXISTS à chaque run (vérif idempotente),
+-- même si le schéma existe déjà : il faut donc ce droit au niveau database.
 grant usage on all schemas in database raw to role loader;
 grant usage on future schemas in database raw to role loader;
 grant create table on schema raw.raw_transfermarkt to role loader;
