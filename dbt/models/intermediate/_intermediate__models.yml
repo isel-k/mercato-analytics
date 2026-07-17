@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: int_players__club_spells
+    description: >
+      Une ligne par transfert, reconstruite en période "joueur x club" : la période
+      commence à la date du transfert et se termine à la date du transfert suivant
+      du même joueur (`spell_end_date` nul si le joueur est toujours à ce club au
+      dernier transfert connu).
+    columns:
+      - name: transfer_id
+        description: Même clé que le transfert à l'origine du spell (relation 1:1).
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_transfers__performance_during_spell
+    description: >
+      Une ligne par transfert, agrégeant les statistiques de performance
+      (`stg_transfermarkt__appearances`) du joueur pour le club acquéreur pendant
+      toute la durée du spell qui suit ce transfert.
+    columns:
+      - name: transfer_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_transfers__market_value_at_spell_end
+    description: >
+      Une ligne par transfert, avec la valeur marchande connue la plus récente à la
+      date de fin du spell (ou à la date du jour si le joueur est toujours au club).
+      Absent si aucune valorisation n'existe avant cette date.
+    columns:
+      - name: transfer_id
+        data_tests:
+          - unique

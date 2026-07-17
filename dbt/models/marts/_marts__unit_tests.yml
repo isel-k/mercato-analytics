@@ -1,0 +1,143 @@
+version: 2
+
+unit_tests:
+  - name: test_fct_transfer_roi_nominal_case
+    description: >
+      Cas nominal : montant payé, plus-value de valeur marchande positive pendant
+      le spell, et performance sportive non nulle.
+    model: fct_transfer
+    given:
+      - input: ref('stg_transfermarkt__transfers')
+        rows:
+          - transfer_id: "t1"
+            player_id: 1
+            player_name: "Test Player"
+            transfer_date: "2023-01-01"
+            transfer_season: "22/23"
+            from_club_id: 10
+            from_club_name: "Club A"
+            to_club_id: 20
+            to_club_name: "Club B"
+            transfer_fee: 1000000
+            market_value_in_eur: 800000
+      - input: ref('int_players__club_spells')
+        rows:
+          - transfer_id: "t1"
+            player_id: 1
+            club_id: 20
+            spell_start_date: "2023-01-01"
+            spell_end_date: "2024-01-01"
+            is_current_spell: false
+      - input: ref('int_transfers__performance_during_spell')
+        rows:
+          - transfer_id: "t1"
+            matches_played: 30
+            goals: 8
+            assists: 2
+            minutes_played: 2500
+            yellow_cards: 3
+            red_cards: 0
+      - input: ref('int_transfers__market_value_at_spell_end')
+        rows:
+          - transfer_id: "t1"
+            market_value_at_spell_end: 2000000
+            market_value_at_spell_end_date: "2023-12-01"
+    expect:
+      rows:
+        - transfer_id: "t1"
+          roi_financier: 0.2
+          cost_per_goal_contribution: 100000
+
+  - name: test_fct_transfer_roi_free_transfer
+    description: >
+      Transfert libre (transfer_fee = 0) : roi_financier doit être nul (division
+      par zéro évitée), cost_per_goal_contribution reste calculable (coût nul).
+    model: fct_transfer
+    given:
+      - input: ref('stg_transfermarkt__transfers')
+        rows:
+          - transfer_id: "t2"
+            player_id: 2
+            player_name: "Free Player"
+            transfer_date: "2023-01-01"
+            transfer_season: "22/23"
+            from_club_id: 10
+            from_club_name: "Club A"
+            to_club_id: 20
+            to_club_name: "Club B"
+            transfer_fee: 0
+            market_value_in_eur: 500000
+      - input: ref('int_players__club_spells')
+        rows:
+          - transfer_id: "t2"
+            player_id: 2
+            club_id: 20
+            spell_start_date: "2023-01-01"
+            spell_end_date: "2024-01-01"
+            is_current_spell: false
+      - input: ref('int_transfers__performance_during_spell')
+        rows:
+          - transfer_id: "t2"
+            matches_played: 20
+            goals: 3
+            assists: 1
+            minutes_played: 1500
+            yellow_cards: 1
+            red_cards: 0
+      - input: ref('int_transfers__market_value_at_spell_end')
+        rows:
+          - transfer_id: "t2"
+            market_value_at_spell_end: 600000
+            market_value_at_spell_end_date: "2023-12-01"
+    expect:
+      rows:
+        - transfer_id: "t2"
+          roi_financier: null
+          cost_per_goal_contribution: 0
+
+  - name: test_fct_transfer_roi_no_performance
+    description: >
+      Aucun but ni passe décisive pendant le spell : cost_per_goal_contribution doit
+      être nul (division par zéro évitée), roi_financier reste calculable.
+    model: fct_transfer
+    given:
+      - input: ref('stg_transfermarkt__transfers')
+        rows:
+          - transfer_id: "t3"
+            player_id: 3
+            player_name: "Injured Player"
+            transfer_date: "2023-01-01"
+            transfer_season: "22/23"
+            from_club_id: 10
+            from_club_name: "Club A"
+            to_club_id: 20
+            to_club_name: "Club B"
+            transfer_fee: 1000000
+            market_value_in_eur: 900000
+      - input: ref('int_players__club_spells')
+        rows:
+          - transfer_id: "t3"
+            player_id: 3
+            club_id: 20
+            spell_start_date: "2023-01-01"
+            spell_end_date: "2024-01-01"
+            is_current_spell: false
+      - input: ref('int_transfers__performance_during_spell')
+        rows:
+          - transfer_id: "t3"
+            matches_played: 0
+            goals: 0
+            assists: 0
+            minutes_played: 0
+            yellow_cards: 0
+            red_cards: 0
+      - input: ref('int_transfers__market_value_at_spell_end')
+        rows:
+          - transfer_id: "t3"
+            market_value_at_spell_end: 1200000
+            market_value_at_spell_end_date: "2023-12-01"
+    expect:
+      rows:
+        - transfer_id: "t3"
+          roi_financier: -0.7
+          cost_per_goal_contribution: null
