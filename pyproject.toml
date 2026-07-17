@@ -9,4 +9,5 @@ dependencies = [
     "sqlfluff>=3.2",
     "sqlfluff-templater-dbt>=3.2",
     "soccerdata>=1.8",
+    "kagglehub>=0.3",
 ]
