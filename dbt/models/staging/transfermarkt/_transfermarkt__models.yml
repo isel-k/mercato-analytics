@@ -57,3 +57,89 @@ models:
         description: Valeur marchande estimée en euros.
         data_tests:
           - not_null
+
+  - name: stg_transfermarkt__countries
+    description: Une ligne par pays référencé par Transfermarkt.
+    columns:
+      - name: country_id
+        description: Identifiant naturel du pays.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_transfermarkt__national_teams
+    description: Une ligne par sélection nationale.
+    columns:
+      - name: national_team_id
+        description: Identifiant naturel de la sélection nationale.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_transfermarkt__games
+    description: Une ligne par match joué, toutes compétitions confondues.
+    columns:
+      - name: game_id
+        description: Identifiant naturel du match.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_transfermarkt__club_games
+    description: >
+      Une ligne par match vu du point de vue d'un club (grain club x match) —
+      chaque match a donc deux lignes, une par club participant.
+    columns:
+      - name: club_game_id
+        description: Clé de substitution (hash de club_id, game_id).
+        data_tests:
+          - unique
+          - not_null
+      - name: game_id
+        data_tests:
+          - not_null
+      - name: club_id
+        data_tests:
+          - not_null
+
+  - name: stg_transfermarkt__appearances
+    description: Une ligne par participation d'un joueur à un match (grain joueur x match).
+    columns:
+      - name: appearance_id
+        description: Identifiant naturel de la participation (fourni par la source).
+        data_tests:
+          - unique
+          - not_null
+      - name: game_id
+        data_tests:
+          - not_null
+      - name: player_id
+        data_tests:
+          - not_null
+
+  - name: stg_transfermarkt__game_events
+    description: Une ligne par événement de match (but, carton, remplacement).
+    columns:
+      - name: game_event_id
+        description: Identifiant naturel de l'événement (fourni par la source).
+        data_tests:
+          - unique
+          - not_null
+      - name: game_id
+        data_tests:
+          - not_null
+
+  - name: stg_transfermarkt__game_lineups
+    description: Une ligne par joueur titulaire ou remplaçant dans la composition d'un match.
+    columns:
+      - name: game_lineups_id
+        description: Identifiant naturel de la ligne de composition (fourni par la source).
+        data_tests:
+          - unique
+          - not_null
+      - name: game_id
+        data_tests:
+          - not_null
+      - name: player_id
+        data_tests:
+          - not_null
