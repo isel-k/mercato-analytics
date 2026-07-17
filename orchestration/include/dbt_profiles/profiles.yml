@@ -1,0 +1,18 @@
+# Profile used by Cosmos inside the Airflow containers only (not for local
+# interactive dbt runs, which use ~/.dbt/profiles.yml instead). Safe to commit:
+# every value below is a reference to an env var set in orchestration/.env
+# (gitignored), never a literal secret.
+mercato_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE') }}"
+      database: analytics
+      warehouse: mercato_wh
+      schema: dbt
+      private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY') }}"
+      private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE') }}"
+      threads: 4

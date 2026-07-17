@@ -1,0 +1,4 @@
+# Astro Runtime includes the following pre-installed providers packages: https://www.astronomer.io/docs/astro/runtime-image-architecture#provider-packages
+astronomer-cosmos[dbt-snowflake]>=1.9
+dlt[snowflake]>=1.5
+kagglehub>=0.3

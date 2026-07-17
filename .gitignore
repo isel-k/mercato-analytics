@@ -16,7 +16,9 @@ dbt/logs/
 dbt/.user.yml
 
 # Airflow / Astro
-.astro/
+# orchestration/.astro/ has its own precise .gitignore (config.yaml,
+# dag_integrity_exceptions.txt etc. are meant to be committed — only
+# */standalone/ and *.local.y*ml are local machine state).
 orchestration/logs/
 orchestration/**/__pycache__/
 

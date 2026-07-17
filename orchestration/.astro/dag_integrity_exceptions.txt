@@ -1,0 +1,9 @@
+# Add dag files to exempt from parse test below. ex: dags/<test-file>
+# Both DAGs below build a Cosmos DbtDag, which needs the dbt project mounted
+# at /usr/local/airflow/dbt (see docker-compose.override.yml). `astro dev
+# parse`/`astro dev pytest` run in an ephemeral container that does not apply
+# docker-compose.override.yml, so this mount is absent there even though it's
+# present under `astro dev start` (validated manually: both DAGs parse and run
+# real dbt tasks successfully once the environment is up).
+dags/transform.py
+dags/full_refresh_monthly.py

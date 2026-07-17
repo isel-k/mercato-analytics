@@ -1,0 +1,14 @@
+x-mounts: &mounts
+  volumes:
+    - ../ingestion:/usr/local/airflow/ingestion
+    - ../dbt:/usr/local/airflow/dbt
+
+services:
+  scheduler:
+    <<: *mounts
+  dag-processor:
+    <<: *mounts
+  api-server:
+    <<: *mounts
+  triggerer:
+    <<: *mounts
