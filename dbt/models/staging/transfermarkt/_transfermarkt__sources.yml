@@ -1,0 +1,40 @@
+version: 2
+
+sources:
+  - name: transfermarkt
+    description: >
+      Dataset Kaggle davidcariboo/player-scores (transferts, valeurs marchandes,
+      clubs, compétitions, performances), chargé via dlt en merge sur clés
+      naturelles. Mis à jour hebdomadairement par l'auteur du dataset.
+    database: raw
+    schema: raw_transfermarkt
+    config:
+      loaded_at_field: "to_timestamp_ntz(_dlt_load_id::number(38,0))"
+      freshness:
+        warn_after: { count: 8, period: day }
+        error_after: { count: 14, period: day }
+    tables:
+      - name: competitions
+        description: Compétitions (championnats, coupes) référencées par Transfermarkt.
+      - name: countries
+        description: Référentiel pays.
+      - name: national_teams
+        description: Sélections nationales.
+      - name: clubs
+        description: Clubs de football.
+      - name: players
+        description: Joueurs, avec attributs biographiques et valeur marchande courante.
+      - name: games
+        description: Matchs joués, toutes compétitions confondues.
+      - name: club_games
+        description: Grain club x match — stats agrégées d'un club sur un match donné.
+      - name: appearances
+        description: Grain joueur x match — participations et stats individuelles.
+      - name: game_events
+        description: Événements de match (buts, cartons, remplacements).
+      - name: game_lineups
+        description: Compositions d'équipe par match.
+      - name: player_valuations
+        description: Historique des valeurs marchandes estimées par joueur et par date.
+      - name: transfers
+        description: Transferts de joueurs entre clubs, avec montant et date.

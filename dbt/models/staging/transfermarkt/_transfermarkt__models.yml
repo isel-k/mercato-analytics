@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: stg_transfermarkt__competitions
+    description: Une ligne par compétition (championnat, coupe).
+    columns:
+      - name: competition_id
+        description: Identifiant naturel de la compétition (ex. `GB1` pour la Premier League).
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_transfermarkt__clubs
+    description: Une ligne par club.
+    columns:
+      - name: club_id
+        description: Identifiant naturel du club.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_transfermarkt__players
+    description: Une ligne par joueur, avec attributs biographiques et valeur marchande courante.
+    columns:
+      - name: player_id
+        description: Identifiant naturel du joueur.
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_transfermarkt__transfers
+    description: Une ligne par transfert (joueur, date, club sortant, club entrant).
+    columns:
+      - name: transfer_id
+        description: Clé de substitution (hash de player_id, transfer_date, from_club_id, to_club_id).
+        data_tests:
+          - unique
+          - not_null
+      - name: player_id
+        data_tests:
+          - not_null
+      - name: transfer_fee
+        description: Montant du transfert en euros ; nul si prêt ou transfert libre.
+
+  - name: stg_transfermarkt__player_valuations
+    description: Une ligne par estimation de valeur marchande d'un joueur à une date donnée.
+    columns:
+      - name: player_valuation_id
+        description: Clé de substitution (hash de player_id, valuation_date).
+        data_tests:
+          - unique
+          - not_null
+      - name: player_id
+        data_tests:
+          - not_null
+      - name: market_value_in_eur
+        description: Valeur marchande estimée en euros.
+        data_tests:
+          - not_null
