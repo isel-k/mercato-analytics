@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: footballdata
+    description: >
+      Données quasi temps réel de l'API football-data.org (compétitions, équipes,
+      matchs) pour les 5 grands championnats et la Ligue des champions. Complète le
+      snapshot hebdomadaire Transfermarkt.
+    database: raw
+    schema: raw_footballdata
+    config:
+      loaded_at_field: "to_timestamp_ntz(_dlt_load_id::number(38,0))"
+      freshness:
+        warn_after: { count: 1, period: day }
+        error_after: { count: 3, period: day }
+    tables:
+      - name: competitions
+        description: Compétitions suivies par football-data.org.
+      - name: teams
+        description: Équipes (effectif, entraîneur) des compétitions suivies.
+      - name: matches
+        description: Matchs (calendrier et résultats) des compétitions suivies.

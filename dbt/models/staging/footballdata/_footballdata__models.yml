@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_footballdata__competitions
+    description: Une ligne par compétition suivie par football-data.org.
+    columns:
+      - name: competition_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_footballdata__teams
+    description: Une ligne par équipe.
+    columns:
+      - name: team_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_footballdata__matches
+    description: Une ligne par match (calendrier et résultat).
+    columns:
+      - name: match_id
+        data_tests:
+          - unique
+          - not_null
+      - name: home_team_id
+        data_tests:
+          - not_null
+      - name: away_team_id
+        data_tests:
+          - not_null
