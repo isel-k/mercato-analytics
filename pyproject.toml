@@ -1,0 +1,12 @@
+[project]
+name = "mercato-analytics"
+version = "0.1.0"
+description = "Data warehouse mercato football : transferts, valeurs marchandes, performances et ROI transfert"
+requires-python = ">=3.12"
+dependencies = [
+    "dlt[snowflake]>=1.5",
+    "dbt-snowflake>=1.9",
+    "sqlfluff>=3.2",
+    "sqlfluff-templater-dbt>=3.2",
+    "soccerdata>=1.8",
+]
