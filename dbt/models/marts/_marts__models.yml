@@ -69,3 +69,36 @@ models:
         description: >
           Montant payé / (buts + passes décisives pendant le spell). Nul si aucun but
           ni passe décisive n'a été enregistré durant le spell.
+
+  - name: dim_team
+    description: >
+      Une ligne par équipe suivie par football-data.org (5 grands championnats +
+      Ligue des champions). Référentiel distinct de `dim_club` (Transfermarkt) —
+      pas de résolution d'identité entre les deux sources pour l'instant.
+    columns:
+      - name: team_id
+        data_tests:
+          - unique
+          - not_null
+
+  - name: fct_match
+    description: Une ligne par match (calendrier et résultat), football-data.org.
+    columns:
+      - name: match_id
+        data_tests:
+          - unique
+          - not_null
+      - name: home_team_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_team')
+                field: team_id
+      - name: away_team_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_team')
+                field: team_id
