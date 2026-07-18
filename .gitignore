@@ -14,6 +14,7 @@ dbt/target/
 dbt/dbt_packages/
 dbt/logs/
 dbt/.user.yml
+.github/dbt_profiles/.user.yml
 
 # Airflow / Astro
 # orchestration/.astro/ has its own precise .gitignore (config.yaml,
