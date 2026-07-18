@@ -65,6 +65,10 @@ where f.roi_financier is not null
     fmt="eur0"
 />
 
+*`roi_financier` is a ratio, undefined for free transfers (fee = €0) — see
+[Best free transfers](#best-free-transfers) below for those, evaluated on absolute
+value gained instead.*
+
 ## Best financial ROI
 
 Transfers (fee ≥ €1M) where market value grew the most during the spell at the
@@ -190,4 +194,52 @@ limit 12
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>
     <Column id=cost_per_goal_contribution title="Cost / contribution" fmt=eur0/>
+</DataTable>
+
+## Best free transfers
+
+Confirmed free transfers (fee = €0, not just an unrecorded fee — the source data
+distinguishes the two) ranked by absolute market value gained during the spell.
+`roi_financier` can't express this (dividing by a €0 cost isn't meaningful), so
+this uses `value_gained_absolute` instead — the same value creation, in euros
+rather than as a ratio.
+
+```sql best_free_transfers
+select
+    p.player_name,
+    f.transfer_date,
+    tc.club_name as to_club,
+    f.market_value_at_transfer,
+    f.market_value_at_spell_end,
+    f.value_gained_absolute,
+    f.goals_during_spell,
+    f.assists_during_spell
+from mercato_analytics.fct_transfer f
+join mercato_analytics.dim_player p on p.player_id = f.player_id
+left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+where f.transfer_fee = 0 and f.value_gained_absolute is not null
+    and f.transfer_season like '${inputs.season.value}'
+    and coalesce(tc.club_name, '') like '${inputs.club.value}'
+order by f.value_gained_absolute desc
+limit 12
+```
+
+<BarChart
+    data={best_free_transfers}
+    title="Top 12 — Value gained on free transfers"
+    x=player_name
+    y=value_gained_absolute
+    swapXY=true
+    fmt=eur0
+/>
+
+<DataTable data={best_free_transfers} rows=12>
+    <Column id=player_name title="Player"/>
+    <Column id=transfer_date title="Transfer date"/>
+    <Column id=to_club title="Club"/>
+    <Column id=market_value_at_transfer title="Value at signing" fmt=eur0/>
+    <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
+    <Column id=value_gained_absolute title="Value gained" fmt=eur0/>
+    <Column id=goals_during_spell title="Goals"/>
+    <Column id=assists_during_spell title="Assists"/>
 </DataTable>
