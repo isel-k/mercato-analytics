@@ -91,15 +91,27 @@ CI/CD : GitHub Actions (sqlfluff, dbt build sur PR)
 
 ## Statut
 
-- Ingestion : pipelines dlt `transfermarkt` et `footballdata` opérationnels.
+- Ingestion : pipelines dlt `transfermarkt` et `footballdata` opérationnels, auth par
+  clé sur un user Snowflake `SERVICE` dédié (`PIPELINE_SVC`, pas le compte personnel).
   `fbref` **bloqué** — FBref sert un challenge Cloudflare interactif à toute requête
   automatisée (voir [`ingestion/fbref/README.md`](./ingestion/fbref/README.md)).
 - Transformation : staging complet sur `transfermarkt` (12 modèles) et `footballdata`
-  (3 modèles) ; mart `fct_transfer` avec ROI transfert (`roi_financier`,
-  `cost_per_goal_contribution`) livré et testé (unit tests + tests génériques dbt).
+  (3 modèles) ; marts `fct_transfer` (ROI transfert : `roi_financier`,
+  `cost_per_goal_contribution`) et `dim_team`/`fct_match` (football-data.org).
+  Testé (unit tests + tests génériques dbt), documenté (`dbt docs generate`).
 - Orchestration : 3 DAGs Airflow (Astronomer + Cosmos) — `ingest_daily`, `transform`,
-  `full_refresh_monthly` — validés en local (`astro dev start`).
+  `full_refresh_monthly` — avec alerting sur échec, validés en local
+  (`astro dev start`).
 - Restitution : dashboard Evidence (`pages/index.md`) sur `fct_transfer`.
-- Reste à faire : staging/marts sur `raw_footballdata` au-delà du staging (pas de
-  mart dédié pour l'instant), déploiement des DAGs / dashboard en production, CI
-  GitHub Actions.
+- CI : `.github/workflows/ci.yml` (sqlfluff + dbt build sur PR) et
+  `deploy-dashboard.yml` (build + publie sur GitHub Pages) écrits et testés
+  localement avec les mêmes commandes — **inertes tant que ce repo n'est pas
+  poussé sur un remote GitHub** avec les secrets `SNOWFLAKE_USER`,
+  `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PRIVATE_KEY`, `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`
+  configurés (valeurs de `PIPELINE_SVC`), et Pages activé sur "GitHub Actions".
+- Déploiement Airflow (Astronomer Cloud) : pas fait — nécessite un compte
+  Astronomer (payant au-delà du trial) et un `astro deployment create` que je ne
+  peux pas faire à ta place. Reste en local (`astro dev start`) pour l'instant.
+- Reste à faire, plus mineur : résolution d'identité club/joueur entre Transfermarkt
+  et football-data.org (aucun rapprochement pour l'instant, deux référentiels
+  parallèles), dbt MCP Server (bonus), pages Evidence par club/compétition.
