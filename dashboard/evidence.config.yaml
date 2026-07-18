@@ -1,3 +1,9 @@
+# Served at https://isel-k.github.io/mercato-analytics/ (GitHub Pages project
+# site, not a custom domain) — every asset/link must be prefixed with this path
+# or they 404 and the page loads unstyled with "Loading..." stuck everywhere.
+deployment:
+  basePath: /mercato-analytics
+
 appearance:
   default: system
   switcher: true
