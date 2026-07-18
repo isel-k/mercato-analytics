@@ -40,6 +40,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install dbt-snowflake
+      - name: dbt deps
+        working-directory: dbt
+        run: dbt deps
       - name: dbt build
         working-directory: dbt
         run: dbt build --target ci
