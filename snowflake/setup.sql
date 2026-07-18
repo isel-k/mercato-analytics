@@ -67,7 +67,26 @@ grant create schema on database analytics to role transformer;
 -- dbt crée lui-même les schémas staging/intermediate/marts au premier run ;
 -- l'ownership du schéma créé donne les droits nécessaires dessus.
 
--- attribution des rôles à ton utilisateur ----------------------------------
--- Remplace <YOUR_USER> par ton nom d'utilisateur Snowflake avant d'exécuter.
-grant role loader to user <YOUR_USER>;
-grant role transformer to user <YOUR_USER>;
+-- utilisateur SERVICE dédié aux pipelines ----------------------------------
+-- Snowflake Trust Center signale les users PERSON utilisés en auth par clé
+-- seule (password-only finding) : les pipelines (dlt/dbt/Airflow/Evidence) ne
+-- doivent jamais tourner sous ton compte personnel. TYPE = SERVICE interdit
+-- tout mot de passe sur ce user — seule l'auth par clé RSA est possible.
+-- Génère la clé localement puis remplace <RSA_PUBLIC_KEY_BODY> :
+--   openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out .dlt/snowflake_loader_key.p8 -v2 aes256
+--   openssl rsa -in .dlt/snowflake_loader_key.p8 -pubout -out /tmp/key.pub
+create user if not exists pipeline_svc
+type = service
+rsa_public_key = '<RSA_PUBLIC_KEY_BODY>'
+default_warehouse = mercato_wh
+default_role = loader
+comment = 'Service account for dlt/dbt/Airflow/Evidence pipelines (mercato-analytics)';
+
+grant role loader to user pipeline_svc;
+grant role transformer to user pipeline_svc;
+
+-- Ton compte personnel garde accountadmin pour l'admin manuel (Snowsight,
+-- ce script) mais ne doit plus porter loader/transformer ni de clé RSA —
+-- authentifie-toi en mot de passe + MFA uniquement (cf. Trust Center).
+-- Si tu avais déjà attaché une clé à ton user pour les pipelines :
+--   alter user <YOUR_USER> unset rsa_public_key;
