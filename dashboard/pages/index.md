@@ -6,7 +6,10 @@ Was a transfer profitable given the player's sporting performance, relative to i
 acquisition cost and market value? Two indicators, deliberately kept separate rather
 than merged into a single score: **financial ROI** (market value gain during the
 spell at the club, relative to the fee paid) and **cost per contribution** (fee paid
-relative to goals + assists).
+relative to goals + assists). For players still at the club, "value at spell end" is
+their most recently known market value, not necessarily today's — Transfermarkt
+doesn't re-value every player often, so each table below shows a **Valuation as of**
+date alongside it.
 
 ```sql seasons
 select distinct
@@ -82,6 +85,7 @@ select
     f.transfer_fee,
     f.market_value_at_transfer,
     f.market_value_at_spell_end,
+    f.market_value_at_spell_end_date,
     f.roi_financier,
     f.goals_during_spell,
     f.assists_during_spell
@@ -111,6 +115,7 @@ limit 12
     <Column id=transfer_fee title="Fee" fmt=eur0/>
     <Column id=market_value_at_transfer title="Value at acquisition" fmt=eur0/>
     <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
+    <Column id=market_value_at_spell_end_date title="Valuation as of"/>
     <Column id=roi_financier title="Financial ROI" fmt=pct1/>
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>
@@ -128,6 +133,7 @@ select
     f.transfer_fee,
     f.market_value_at_transfer,
     f.market_value_at_spell_end,
+    f.market_value_at_spell_end_date,
     f.roi_financier,
     f.goals_during_spell,
     f.assists_during_spell
@@ -157,6 +163,7 @@ limit 12
     <Column id=transfer_fee title="Fee" fmt=eur0/>
     <Column id=market_value_at_transfer title="Value at acquisition" fmt=eur0/>
     <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
+    <Column id=market_value_at_spell_end_date title="Valuation as of"/>
     <Column id=roi_financier title="Financial ROI" fmt=pct1/>
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>
@@ -211,6 +218,7 @@ select
     tc.club_name as to_club,
     f.market_value_at_transfer,
     f.market_value_at_spell_end,
+    f.market_value_at_spell_end_date,
     f.value_gained_absolute,
     f.goals_during_spell,
     f.assists_during_spell
@@ -239,6 +247,7 @@ limit 12
     <Column id=to_club title="Club"/>
     <Column id=market_value_at_transfer title="Value at signing" fmt=eur0/>
     <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
+    <Column id=market_value_at_spell_end_date title="Valuation as of"/>
     <Column id=value_gained_absolute title="Value gained" fmt=eur0/>
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>
