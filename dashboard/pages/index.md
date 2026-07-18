@@ -11,6 +11,10 @@ their most recently known market value, not necessarily today's — Transfermark
 doesn't re-value every player often, so each table below shows a **Valuation as of**
 date alongside it.
 
+*Out of scope: commercial value (shirt sales, sponsorship, social reach) isn't in
+this ROI — none of the sources behind this project publish player-level commercial
+figures, and a made-up proxy would be worse than not having one.*
+
 ```sql seasons
 select distinct
     transfer_season,
@@ -72,23 +76,13 @@ where f.roi_financier is not null
 [Best free transfers](#best-free-transfers) below for those, evaluated on absolute
 value gained instead.*
 
-## Best financial ROI
-
-Transfers (fee ≥ €1M) where market value grew the most during the spell at the
-club, relative to the acquisition cost.
-
-```sql top_roi
+```sql hero_players
 select
     p.player_name,
-    f.transfer_date,
+    p.image_url,
     tc.club_name as to_club,
-    f.transfer_fee,
-    f.market_value_at_transfer,
-    f.market_value_at_spell_end,
-    f.market_value_at_spell_end_date,
-    f.roi_financier,
-    f.goals_during_spell,
-    f.assists_during_spell
+    tc.crest_url,
+    f.roi_financier
 from mercato_analytics.fct_transfer f
 join mercato_analytics.dim_player p on p.player_id = f.player_id
 left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
@@ -96,75 +90,116 @@ where f.roi_financier is not null and f.transfer_fee >= 1000000
     and f.transfer_season like '${inputs.season.value}'
     and coalesce(tc.club_name, '') like '${inputs.club.value}'
 order by f.roi_financier desc
-limit 12
+limit 6
 ```
 
-<BarChart
-    data={top_roi}
-    title="Top 12 — Financial ROI"
-    x=player_name
-    y=roi_financier
-    swapXY=true
-    fmt=pct1
-/>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-6">
+{#each hero_players as p}
+<div class="rounded-lg border border-base-300 p-4 flex flex-col items-center text-center gap-1">
+    <Image url={p.image_url} width="64px" height="64px" description={p.player_name} class="rounded-full object-cover" />
+    <div class="font-semibold mt-1">{p.player_name}</div>
+    <div class="flex items-center gap-1 text-sm opacity-60">
+        <Image url={p.crest_url} width="16px" height="16px" description={p.to_club} />
+        {p.to_club}
+    </div>
+    <div class="text-2xl font-bold" class:text-positive={p.roi_financier >= 0} class:text-negative={p.roi_financier < 0}>
+        {fmt(p.roi_financier, 'pct1')}
+    </div>
+</div>
+{/each}
+</div>
 
-<DataTable data={top_roi} rows=12>
-    <Column id=player_name title="Player"/>
-    <Column id=transfer_date title="Transfer date"/>
-    <Column id=to_club title="Club"/>
-    <Column id=transfer_fee title="Fee" fmt=eur0/>
-    <Column id=market_value_at_transfer title="Value at acquisition" fmt=eur0/>
-    <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
-    <Column id=market_value_at_spell_end_date title="Valuation as of"/>
-    <Column id=roi_financier title="Financial ROI" fmt=pct1/>
-    <Column id=goals_during_spell title="Goals"/>
-    <Column id=assists_during_spell title="Assists"/>
-</DataTable>
+## Financial ROI — best & worst
 
-## Worst financial ROI
+Transfers (fee ≥ €1M): the 6 biggest gains and the 6 biggest losses in market value
+during the spell at the club, relative to the acquisition cost.
 
-Same fee threshold, at the other end of the ranking.
+```sql roi_spectrum
+with best as (
+    select
+        p.player_name,
+        p.image_url,
+        f.transfer_date,
+        tc.club_name as to_club,
+        tc.crest_url,
+        f.transfer_fee,
+        f.market_value_at_transfer,
+        f.market_value_at_spell_end,
+        f.market_value_at_spell_end_date,
+        f.roi_financier,
+        f.goals_during_spell,
+        f.assists_during_spell
+    from mercato_analytics.fct_transfer f
+    join mercato_analytics.dim_player p on p.player_id = f.player_id
+    left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+    where f.roi_financier is not null and f.transfer_fee >= 1000000
+        and f.transfer_season like '${inputs.season.value}'
+        and coalesce(tc.club_name, '') like '${inputs.club.value}'
+    order by f.roi_financier desc
+    limit 6
+),
 
-```sql worst_roi
+worst as (
+    select
+        p.player_name,
+        p.image_url,
+        f.transfer_date,
+        tc.club_name as to_club,
+        tc.crest_url,
+        f.transfer_fee,
+        f.market_value_at_transfer,
+        f.market_value_at_spell_end,
+        f.market_value_at_spell_end_date,
+        f.roi_financier,
+        f.goals_during_spell,
+        f.assists_during_spell
+    from mercato_analytics.fct_transfer f
+    join mercato_analytics.dim_player p on p.player_id = f.player_id
+    left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+    where f.roi_financier is not null and f.transfer_fee >= 1000000
+        and f.transfer_season like '${inputs.season.value}'
+        and coalesce(tc.club_name, '') like '${inputs.club.value}'
+    order by f.roi_financier asc
+    limit 6
+),
+
+combined as (
+    select * from best
+    union all
+    select * from worst
+)
+
 select
-    p.player_name,
-    f.transfer_date,
-    tc.club_name as to_club,
-    f.transfer_fee,
-    f.market_value_at_transfer,
-    f.market_value_at_spell_end,
-    f.market_value_at_spell_end_date,
-    f.roi_financier,
-    f.goals_during_spell,
-    f.assists_during_spell
-from mercato_analytics.fct_transfer f
-join mercato_analytics.dim_player p on p.player_id = f.player_id
-left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
-where f.roi_financier is not null and f.transfer_fee >= 1000000
-    and f.transfer_season like '${inputs.season.value}'
-    and coalesce(tc.club_name, '') like '${inputs.club.value}'
-order by f.roi_financier asc
-limit 12
+    *,
+    case when roi_financier >= 0 then 'Gained value' else 'Lost value' end as roi_direction
+from combined
+order by roi_financier desc
 ```
 
 <BarChart
-    data={worst_roi}
-    title="Bottom 12 — Financial ROI"
+    data={roi_spectrum}
+    title="Financial ROI — best & worst"
     x=player_name
     y=roi_financier
+    series=roi_direction
+    seriesColors={{'Gained value': 'positive', 'Lost value': 'negative'}}
     swapXY=true
     fmt=pct1
 />
 
-<DataTable data={worst_roi} rows=12>
+<DataTable data={roi_spectrum} rows=12>
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" />
     <Column id=player_name title="Player"/>
-    <Column id=transfer_date title="Transfer date"/>
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" />
     <Column id=to_club title="Club"/>
+    <Column id=roi_financier title="Financial ROI" fmt=pct1
+        contentType=colorscale colorScale={['#dc2626', '#f3f4f6', '#16a34a']}
+        colorMid={0} colorMin={-1} colorMax={1} />
     <Column id=transfer_fee title="Fee" fmt=eur0/>
+    <Column id=transfer_date title="Transfer date"/>
     <Column id=market_value_at_transfer title="Value at acquisition" fmt=eur0/>
     <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
     <Column id=market_value_at_spell_end_date title="Valuation as of"/>
-    <Column id=roi_financier title="Financial ROI" fmt=pct1/>
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>
 </DataTable>
@@ -177,8 +212,10 @@ cost per goal + assist.
 ```sql cost_efficiency
 select
     p.player_name,
+    p.image_url,
     f.transfer_date,
     tc.club_name as to_club,
+    tc.crest_url,
     f.transfer_fee,
     f.goals_during_spell,
     f.assists_during_spell,
@@ -194,8 +231,10 @@ limit 12
 ```
 
 <DataTable data={cost_efficiency} rows=12>
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" />
     <Column id=player_name title="Player"/>
     <Column id=transfer_date title="Transfer date"/>
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" />
     <Column id=to_club title="Club"/>
     <Column id=transfer_fee title="Fee" fmt=eur0/>
     <Column id=goals_during_spell title="Goals"/>
@@ -214,8 +253,10 @@ rather than as a ratio.
 ```sql best_free_transfers
 select
     p.player_name,
+    p.image_url,
     f.transfer_date,
     tc.club_name as to_club,
+    tc.crest_url,
     f.market_value_at_transfer,
     f.market_value_at_spell_end,
     f.market_value_at_spell_end_date,
@@ -242,8 +283,10 @@ limit 12
 />
 
 <DataTable data={best_free_transfers} rows=12>
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" />
     <Column id=player_name title="Player"/>
     <Column id=transfer_date title="Transfer date"/>
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" />
     <Column id=to_club title="Club"/>
     <Column id=market_value_at_transfer title="Value at signing" fmt=eur0/>
     <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>

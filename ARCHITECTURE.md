@@ -180,6 +180,44 @@ GitHub Pages (which serves the site under `/mercato-analytics/`, not the domain
 root) loads an unstyled page stuck on "Loading..." because every asset URL is
 missing its prefix. Both were hit for real, not anticipated in advance.
 
+The base-path fix has its own sharp edge: it works by a preprocessor doing a naive
+text regex over every `href=`/`src=` in a page's raw markdown, *before* Svelte
+evaluates any `{expression}` — so a hand-written `<img src={someUrl}>` gets its
+literal, unevaluated `{someUrl}` text prefixed with `/mercato-analytics/`, breaking
+even fully-external URLs at runtime (`/mercato-analytics/https://...`). Evidence's
+own `<Image url={someUrl}>` component sidesteps this because `url` isn't a name the
+regex matches, and its internal `<img src>` lives inside a compiled `.svelte` file
+the preprocessor never touches (it only runs on `+page.md`). Rule of thumb: use
+`<Image>` for any dynamic/external image in a page, never a raw `<img src>`.
+
+### 9. Club crests derived from `club_id`, no new source needed
+
+`dim_club.crest_url` is `https://tmssl.akamaized.net/images/wappen/tiny/{club_id}.png`
+— Transfermarkt's own crest CDN, keyed directly by the `club_id` already in every
+transfermarkt table.
+
+**Why:** there's no crest/logo field anywhere in the Kaggle dataset's tables, and
+resolving club identity against football-data.org's `dim_team` (which does have a
+`crest` field) would mean doing the cross-source identity resolution decision 5
+explicitly avoids. The CDN pattern is undocumented but stable and public — verified
+against real `club_id`s (Sevilla FC, PSG) before relying on it, same bar as any
+other external dependency here.
+
+### 10. Commercial value is out of scope, on purpose
+
+`fct_transfer` has no column for shirt sales, sponsorship, or social-media reach —
+a player's commercial pull is a real part of why some transfers happen, but it
+isn't in this model at all.
+
+**Why:** none of this project's sources publish player-level commercial figures
+(Transfermarkt and football-data.org are both sporting/transfer data). The
+platforms that do model this — FootballTransfers/SciSports (ETV), CIES Football
+Observatory — are enterprise or paid-subscription only, no self-serve API, checked
+directly before ruling them out rather than assumed. Inventing a proxy metric with
+no real data behind it would be worse than being explicit about the gap, so the
+dashboard says so in its intro rather than pretending `roi_financier` is a complete
+picture.
+
 ### 8. Each CI job needs its own `dbt deps`
 
 Both the `sqlfluff` and `dbt-build` jobs in `ci.yml` run `dbt deps`, even though
