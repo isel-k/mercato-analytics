@@ -10,8 +10,12 @@ Projet portfolio suivant l'[Analytics Development Lifecycle (ADLC)](https://www.
 - **Sources** :
   - [Kaggle — Transfermarkt (davidcariboo/player-scores)](https://www.kaggle.com/datasets/davidcariboo/player-scores) : transferts, valeurs marchandes, clubs, compétitions.
   - [football-data.org API](https://www.football-data.org/) : calendriers, résultats, compositions.
-  - [FBref](https://fbref.com/) via la librairie [`soccerdata`](https://github.com/probberechts/soccerdata) : statistiques de performance avancées.
-- **Métrique cible** : ROI transfert (à définir précisément dans un modèle dbt dédié, avec unit tests).
+  - [FBref](https://fbref.com/) via la librairie [`soccerdata`](https://github.com/probberechts/soccerdata) : statistiques de performance avancées. **Bloqué** — FBref sert un challenge Cloudflare interactif à toute requête automatisée (voir [`ingestion/fbref/README.md`](./ingestion/fbref/README.md)).
+- **Métrique cible** : ROI transfert, définie dans `fct_transfer` (voir
+  [`dbt/models/marts/_marts__models.yml`](./dbt/models/marts/_marts__models.yml)) en
+  deux indicateurs séparés — `roi_financier` (plus-value de valeur marchande / coût
+  d'acquisition) et `cost_per_goal_contribution` (coût / buts+passes) — couverts par
+  3 unit tests dbt.
 
 ## 2. Develop
 
@@ -29,9 +33,11 @@ Projet portfolio suivant l'[Analytics Development Lifecycle (ADLC)](https://www.
 
 ## 4. Deploy
 
-- CI GitHub Actions ([`.github/workflows/`](./.github/workflows)) : sqlfluff + `dbt build` sur chaque PR (environnement de dev).
-- Déploiement des DAGs Airflow après merge sur `main`.
-- Projet dbt connecté à dbt Cloud pour les runs de production.
+- CI GitHub Actions ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) : sqlfluff + `dbt build` sur chaque PR (environnement de dev).
+- Dashboard Evidence : [`deploy-dashboard.yml`](./.github/workflows/deploy-dashboard.yml) publie sur GitHub Pages à chaque push sur `main` touchant `dashboard/`.
+- dbt orchestré via [Cosmos](https://astronomer.github.io/astronomer-cosmos/) dans Airflow (pas de dbt Cloud) — voir [2. Develop](#2-develop).
+- DAGs Airflow : tournent en local (`astro dev start`) pour l'instant. Déploiement
+  production sur Astronomer Cloud pas encore fait (nécessite un compte).
 
 ## 5. Operate
 
