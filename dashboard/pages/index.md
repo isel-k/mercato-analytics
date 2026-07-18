@@ -1,12 +1,12 @@
 ---
-title: ROI Transfert
+title: Transfer ROI
 ---
 
-Un transfert a-t-il été rentable au regard des performances sportives du joueur,
-comparées à son coût d'acquisition et à sa valeur marchande ? Deux indicateurs,
-volontairement distincts plutôt que fusionnés en un score unique : **ROI financier**
-(plus-value de valeur marchande pendant le passage au club, rapportée au montant payé)
-et **coût par contribution** (montant payé rapporté aux buts + passes décisives).
+Was a transfer profitable given the player's sporting performance, relative to its
+acquisition cost and market value? Two indicators, deliberately kept separate rather
+than merged into a single score: **financial ROI** (market value gain during the
+spell at the club, relative to the fee paid) and **cost per contribution** (fee paid
+relative to goals + assists).
 
 ```sql kpi_summary
 select
@@ -20,26 +20,26 @@ where roi_financier is not null
 <BigValue
     data={kpi_summary}
     value=transfers_analyzed
-    title="Transferts analysés"
+    title="Transfers analyzed"
     fmt="#,##0"
 />
 <BigValue
     data={kpi_summary}
     value=avg_roi_financier
-    title="ROI financier moyen"
+    title="Average financial ROI"
     fmt="pct1"
 />
 <BigValue
     data={kpi_summary}
     value=median_cost_per_goal
-    title="Coût médian par contribution (but + passe)"
+    title="Median cost per contribution (goal + assist)"
     fmt="eur0"
 />
 
-## Meilleurs ROI financiers
+## Best financial ROI
 
-Transferts (montant ≥ 1M€) où la valeur marchande a le plus progressé pendant le
-passage au club, rapportée au coût d'acquisition.
+Transfers (fee ≥ €1M) where market value grew the most during the spell at the
+club, relative to the acquisition cost.
 
 ```sql top_roi
 select
@@ -62,7 +62,7 @@ limit 12
 
 <BarChart
     data={top_roi}
-    title="Top 12 — ROI financier"
+    title="Top 12 — Financial ROI"
     x=player_name
     y=roi_financier
     swapXY=true
@@ -70,20 +70,20 @@ limit 12
 />
 
 <DataTable data={top_roi} rows=12>
-    <Column id=player_name title="Joueur"/>
-    <Column id=transfer_date title="Transfert"/>
+    <Column id=player_name title="Player"/>
+    <Column id=transfer_date title="Transfer date"/>
     <Column id=to_club title="Club"/>
-    <Column id=transfer_fee title="Montant" fmt=eur0/>
-    <Column id=market_value_at_transfer title="Valeur à l'achat" fmt=eur0/>
-    <Column id=market_value_at_spell_end title="Valeur en fin de spell" fmt=eur0/>
-    <Column id=roi_financier title="ROI financier" fmt=pct1/>
-    <Column id=goals_during_spell title="Buts"/>
-    <Column id=assists_during_spell title="Passes"/>
+    <Column id=transfer_fee title="Fee" fmt=eur0/>
+    <Column id=market_value_at_transfer title="Value at acquisition" fmt=eur0/>
+    <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
+    <Column id=roi_financier title="Financial ROI" fmt=pct1/>
+    <Column id=goals_during_spell title="Goals"/>
+    <Column id=assists_during_spell title="Assists"/>
 </DataTable>
 
-## Pires ROI financiers
+## Worst financial ROI
 
-Même critère de montant, à l'autre extrémité du classement.
+Same fee threshold, at the other end of the ranking.
 
 ```sql worst_roi
 select
@@ -106,7 +106,7 @@ limit 12
 
 <BarChart
     data={worst_roi}
-    title="Bottom 12 — ROI financier"
+    title="Bottom 12 — Financial ROI"
     x=player_name
     y=roi_financier
     swapXY=true
@@ -114,21 +114,21 @@ limit 12
 />
 
 <DataTable data={worst_roi} rows=12>
-    <Column id=player_name title="Joueur"/>
-    <Column id=transfer_date title="Transfert"/>
+    <Column id=player_name title="Player"/>
+    <Column id=transfer_date title="Transfer date"/>
     <Column id=to_club title="Club"/>
-    <Column id=transfer_fee title="Montant" fmt=eur0/>
-    <Column id=market_value_at_transfer title="Valeur à l'achat" fmt=eur0/>
-    <Column id=market_value_at_spell_end title="Valeur en fin de spell" fmt=eur0/>
-    <Column id=roi_financier title="ROI financier" fmt=pct1/>
-    <Column id=goals_during_spell title="Buts"/>
-    <Column id=assists_during_spell title="Passes"/>
+    <Column id=transfer_fee title="Fee" fmt=eur0/>
+    <Column id=market_value_at_transfer title="Value at acquisition" fmt=eur0/>
+    <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
+    <Column id=roi_financier title="Financial ROI" fmt=pct1/>
+    <Column id=goals_during_spell title="Goals"/>
+    <Column id=assists_during_spell title="Assists"/>
 </DataTable>
 
-## Meilleur rapport coût / contribution sportive
+## Best cost-to-performance ratio
 
-Transferts (montant ≥ 1M€, au moins un but ou une passe pendant le spell) au
-moindre coût par but + passe décisive.
+Transfers (fee ≥ €1M, at least one goal or assist during the spell) at the lowest
+cost per goal + assist.
 
 ```sql cost_efficiency
 select
@@ -148,11 +148,11 @@ limit 12
 ```
 
 <DataTable data={cost_efficiency} rows=12>
-    <Column id=player_name title="Joueur"/>
-    <Column id=transfer_date title="Transfert"/>
+    <Column id=player_name title="Player"/>
+    <Column id=transfer_date title="Transfer date"/>
     <Column id=to_club title="Club"/>
-    <Column id=transfer_fee title="Montant" fmt=eur0/>
-    <Column id=goals_during_spell title="Buts"/>
-    <Column id=assists_during_spell title="Passes"/>
-    <Column id=cost_per_goal_contribution title="Coût / contribution" fmt=eur0/>
+    <Column id=transfer_fee title="Fee" fmt=eur0/>
+    <Column id=goals_during_spell title="Goals"/>
+    <Column id=assists_during_spell title="Assists"/>
+    <Column id=cost_per_goal_contribution title="Cost / contribution" fmt=eur0/>
 </DataTable>
