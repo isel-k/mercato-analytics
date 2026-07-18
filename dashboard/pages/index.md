@@ -8,13 +8,42 @@ than merged into a single score: **financial ROI** (market value gain during the
 spell at the club, relative to the fee paid) and **cost per contribution** (fee paid
 relative to goals + assists).
 
+```sql seasons
+select distinct
+    transfer_season,
+    case
+        when left(transfer_season, 2)::int >= 50 then 1900 + left(transfer_season, 2)::int
+        else 2000 + left(transfer_season, 2)::int
+    end as season_start_year
+from mercato_analytics.fct_transfer
+order by season_start_year desc
+```
+
+```sql clubs
+select distinct tc.club_name
+from mercato_analytics.fct_transfer f
+join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+order by tc.club_name
+```
+
+<Dropdown data={seasons} name=season value=transfer_season title="Season">
+    <DropdownOption value="%" valueLabel="All seasons"/>
+</Dropdown>
+
+<Dropdown data={clubs} name=club value=club_name title="Club (acquiring)">
+    <DropdownOption value="%" valueLabel="All clubs"/>
+</Dropdown>
+
 ```sql kpi_summary
 select
     count(*) as transfers_analyzed,
-    avg(roi_financier) as avg_roi_financier,
-    median(cost_per_goal_contribution) as median_cost_per_goal
-from mercato_analytics.fct_transfer
-where roi_financier is not null
+    avg(f.roi_financier) as avg_roi_financier,
+    median(f.cost_per_goal_contribution) as median_cost_per_goal
+from mercato_analytics.fct_transfer f
+left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+where f.roi_financier is not null
+    and f.transfer_season like '${inputs.season.value}'
+    and coalesce(tc.club_name, '') like '${inputs.club.value}'
 ```
 
 <BigValue
@@ -56,6 +85,8 @@ from mercato_analytics.fct_transfer f
 join mercato_analytics.dim_player p on p.player_id = f.player_id
 left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
 where f.roi_financier is not null and f.transfer_fee >= 1000000
+    and f.transfer_season like '${inputs.season.value}'
+    and coalesce(tc.club_name, '') like '${inputs.club.value}'
 order by f.roi_financier desc
 limit 12
 ```
@@ -100,6 +131,8 @@ from mercato_analytics.fct_transfer f
 join mercato_analytics.dim_player p on p.player_id = f.player_id
 left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
 where f.roi_financier is not null and f.transfer_fee >= 1000000
+    and f.transfer_season like '${inputs.season.value}'
+    and coalesce(tc.club_name, '') like '${inputs.club.value}'
 order by f.roi_financier asc
 limit 12
 ```
@@ -143,6 +176,8 @@ from mercato_analytics.fct_transfer f
 join mercato_analytics.dim_player p on p.player_id = f.player_id
 left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
 where f.cost_per_goal_contribution is not null and f.transfer_fee >= 1000000
+    and f.transfer_season like '${inputs.season.value}'
+    and coalesce(tc.club_name, '') like '${inputs.club.value}'
 order by f.cost_per_goal_contribution asc
 limit 12
 ```
