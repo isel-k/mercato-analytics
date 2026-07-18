@@ -19,11 +19,12 @@ models:
 
   - name: fct_transfer
     description: >
-      Une ligne par transfert, avec le ROI présenté en deux indicateurs distincts :
-      `roi_financier` (plus-value de valeur marchande pendant le spell rapportée au
-      coût d'acquisition) et `cost_per_goal_contribution` (coût du transfert rapporté
-      aux buts + passes décisives pendant le spell). Les deux sont volontairement
-      laissés séparés plutôt que fusionnés en un score unique pondéré.
+      Une ligne par transfert, avec le ROI présenté en indicateurs distincts plutôt
+      que fusionnés en un score unique pondéré : `roi_financier` (plus-value de
+      valeur marchande pendant le spell rapportée au coût d'acquisition, non défini
+      pour les transferts gratuits), `value_gained_absolute` (la même plus-value en
+      valeur absolue, définie même à coût nul) et `cost_per_goal_contribution`
+      (coût du transfert rapporté aux buts + passes décisives pendant le spell).
     columns:
       - name: transfer_id
         data_tests:
@@ -62,9 +63,18 @@ models:
       - name: roi_financier
         description: >
           (valeur marchande en fin de spell - valeur marchande à l'achat - montant
-          payé) / montant payé. Nul si le montant du transfert est nul ou inconnu
-          (prêt, transfert libre), ou si aucune valorisation n'est disponible en fin
-          de spell.
+          payé) / montant payé. Un ratio n'a pas de sens à coût nul : nul si le
+          montant du transfert est 0 (transfert gratuit confirmé) ou inconnu
+          (`null` dans la source — Transfermarkt distingue les deux, cf.
+          `value_gained_absolute` pour une mesure qui couvre aussi les transferts
+          gratuits), ou si aucune valorisation n'est disponible en fin de spell.
+      - name: value_gained_absolute
+        description: >
+          valeur marchande en fin de spell - valeur marchande à l'achat - montant
+          payé, en euros. Une soustraction, pas un ratio : reste défini pour les
+          transferts gratuits (montant = 0), contrairement à `roi_financier`. Nul
+          uniquement si le montant est inconnu ou si aucune valorisation n'est
+          disponible en fin de spell.
       - name: cost_per_goal_contribution
         description: >
           Montant payé / (buts + passes décisives pendant le spell). Nul si aucun but

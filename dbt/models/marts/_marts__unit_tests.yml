@@ -46,12 +46,15 @@ unit_tests:
       rows:
         - transfer_id: "t1"
           roi_financier: 0.2
+          value_gained_absolute: 200000
           cost_per_goal_contribution: 100000
 
   - name: test_fct_transfer_roi_free_transfer
     description: >
-      Transfert libre (transfer_fee = 0) : roi_financier doit être nul (division
-      par zéro évitée), cost_per_goal_contribution reste calculable (coût nul).
+      Transfert libre (transfer_fee = 0, un vrai signal dans la source — pas une
+      donnée manquante) : roi_financier doit être nul (un ratio n'a pas de sens à
+      coût nul), mais value_gained_absolute reste calculable (soustraction, pas de
+      division) et cost_per_goal_contribution aussi (coût nul).
     model: fct_transfer
     given:
       - input: ref('stg_transfermarkt__transfers')
@@ -93,6 +96,7 @@ unit_tests:
       rows:
         - transfer_id: "t2"
           roi_financier: null
+          value_gained_absolute: 100000
           cost_per_goal_contribution: 0
 
   - name: test_fct_transfer_roi_no_performance
@@ -140,4 +144,5 @@ unit_tests:
       rows:
         - transfer_id: "t3"
           roi_financier: -0.7
+          value_gained_absolute: -700000
           cost_per_goal_contribution: null

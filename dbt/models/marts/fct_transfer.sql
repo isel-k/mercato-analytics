@@ -47,6 +47,11 @@ final as (
         *,
         (market_value_at_spell_end - market_value_at_transfer - transfer_fee)
         / nullif(transfer_fee, 0) as roi_financier,
+        -- unlike roi_financier, this is a subtraction (not a ratio), so it stays
+        -- defined even at transfer_fee = 0 (a confirmed free transfer per the
+        -- source data's own convention — null means unknown fee, 0 means free).
+        market_value_at_spell_end - market_value_at_transfer - transfer_fee
+            as value_gained_absolute,
         transfer_fee
         / nullif(goals_during_spell + assists_during_spell, 0) as cost_per_goal_contribution
     from joined
