@@ -6,8 +6,13 @@ Charge vers Snowflake `RAW.raw_transfermarkt`, en `merge` incrémental sur les c
 
 ## Prérequis
 
-- **Identifiants Kaggle** : le téléchargement passe par [`kagglehub`](https://github.com/Kagglehub/kagglehub) (dépendance ajoutée en plus de la liste du CLAUDE.md — nécessaire pour accéder à l'API Kaggle, pas d'alternative plus légère). Authentification via `~/.kaggle/kaggle.json` (format standard du CLI Kaggle) **ou** les variables d'environnement `KAGGLE_USERNAME` / `KAGGLE_KEY`.
-- **Identifiants Snowflake** : copier `.dlt/secrets.toml.example` vers `.dlt/secrets.toml` (gitignoré) et renseigner les valeurs réelles (rôle `LOADER`).
+- **Identifiants Kaggle** : le téléchargement passe par [`kagglehub`](https://github.com/Kagglehub/kagglehub) (dépendance ajoutée en plus de la liste du CLAUDE.md — nécessaire pour accéder à l'API Kaggle, pas d'alternative plus légère). Kaggle a remplacé son ancien système de clé (`kaggle.json`) par un token bearer :
+  génère-le sur [kaggle.com/settings](https://www.kaggle.com/settings) → *API* → *Create New Token*, puis :
+  ```bash
+  mkdir -p ~/.kaggle && echo "<ton_token>" > ~/.kaggle/access_token && chmod 600 ~/.kaggle/access_token
+  ```
+  (ou variable d'environnement `KAGGLE_API_TOKEN`, utile pour Airflow — voir `orchestration/.env.example`).
+- **Identifiants Snowflake** : copier `.dlt/secrets.toml.example` vers `.dlt/secrets.toml` (gitignoré) et renseigner les valeurs réelles — utilisateur `PIPELINE_SVC` (voir [`snowflake/README.md`](../../snowflake/README.md)), rôle `LOADER`, auth par clé RSA.
 
 ## Exécuter
 

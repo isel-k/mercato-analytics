@@ -2,7 +2,9 @@
 
 Data warehouse du mercato football : croiser transferts, valeurs marchandes et performances joueurs pour analyser la rentabilité sportive des transferts. Métrique signature : **ROI transfert**.
 
-Projet portfolio suivant l'[Analytics Development Lifecycle (ADLC)](https://www.getdbt.com/blog/analytics-development-lifecycle) de dbt Labs. Voir [`CLAUDE.md`](./CLAUDE.md) pour les conventions détaillées du projet.
+Projet portfolio suivant l'[Analytics Development Lifecycle (ADLC)](https://www.getdbt.com/blog/analytics-development-lifecycle) de dbt Labs. Voir [`CLAUDE.md`](./CLAUDE.md) pour les conventions détaillées du projet, et [`ARCHITECTURE.md`](./ARCHITECTURE.md) pour le schéma complet du pipeline et le pourquoi des principales décisions techniques (auth Snowflake, orchestration, etc.).
+
+**Dashboard live** : https://isel-k.github.io/mercato-analytics/
 
 ## 1. Plan
 
@@ -60,6 +62,8 @@ Projet portfolio suivant l'[Analytics Development Lifecycle (ADLC)](https://www.
 - Dashboard Evidence : suivi du ROI transfert par joueur, club, compétition, fenêtre de mercato.
 
 ## Architecture
+
+Schéma complet + décisions de conception : [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ```
 Sources : Kaggle Transfermarkt · API football-data.org · FBref (soccerdata)
