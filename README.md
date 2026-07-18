@@ -94,8 +94,12 @@ CI/CD : GitHub Actions (sqlfluff, dbt build sur PR)
 - Ingestion : pipelines dlt `transfermarkt` et `footballdata` opérationnels.
   `fbref` **bloqué** — FBref sert un challenge Cloudflare interactif à toute requête
   automatisée (voir [`ingestion/fbref/README.md`](./ingestion/fbref/README.md)).
-- Transformation : staging complet sur `transfermarkt` (12 modèles) ; mart
-  `fct_transfer` avec ROI transfert (`roi_financier`, `cost_per_goal_contribution`)
-  livré et testé (unit tests + tests génériques dbt).
-- Reste à faire : staging/marts sur `footballdata`, orchestration Airflow, dashboard
-  Evidence, CI GitHub Actions.
+- Transformation : staging complet sur `transfermarkt` (12 modèles) et `footballdata`
+  (3 modèles) ; mart `fct_transfer` avec ROI transfert (`roi_financier`,
+  `cost_per_goal_contribution`) livré et testé (unit tests + tests génériques dbt).
+- Orchestration : 3 DAGs Airflow (Astronomer + Cosmos) — `ingest_daily`, `transform`,
+  `full_refresh_monthly` — validés en local (`astro dev start`).
+- Restitution : dashboard Evidence (`pages/index.md`) sur `fct_transfer`.
+- Reste à faire : staging/marts sur `raw_footballdata` au-delà du staging (pas de
+  mart dédié pour l'instant), déploiement des DAGs / dashboard en production, CI
+  GitHub Actions.
