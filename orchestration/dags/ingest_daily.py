@@ -7,6 +7,7 @@ function, which is idempotent (merge on natural keys, cf. ingestion/*/pipeline.p
 import pendulum
 from airflow.sdk import dag, task
 
+from include.alerting import notify_failure
 from include.assets import RAW_FOOTBALLDATA, RAW_TRANSFERMARKT
 
 
@@ -14,7 +15,7 @@ from include.assets import RAW_FOOTBALLDATA, RAW_TRANSFERMARKT
     schedule="@daily",
     start_date=pendulum.datetime(2026, 1, 1, tz="UTC"),
     catchup=False,
-    default_args={"retries": 2},
+    default_args={"retries": 2, "on_failure_callback": notify_failure},
     tags=["ingestion", "dlt"],
 )
 def ingest_daily():

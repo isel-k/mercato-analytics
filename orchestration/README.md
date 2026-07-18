@@ -30,6 +30,14 @@ Le rôle Snowflake utilisé diffère selon la tâche : `LOADER` pour les pipelin
 `TRANSFORMER` pour dbt/Cosmos — même principe de moindre privilège que le reste du
 projet.
 
+## Alerting
+
+Chaque DAG a `on_failure_callback=notify_failure` (`include/alerting.py`) : toute
+tâche en échec logue un message `[ALERT]` structuré (visible dans l'UI Airflow, sans
+config supplémentaire). Pour aussi recevoir une notification Slack, ajoute
+`SLACK_WEBHOOK_URL=https://hooks.slack.com/...` dans `.env` — rien à changer côté
+code, c'est le seul interrupteur.
+
 ## Code monté dans les conteneurs
 
 `docker-compose.override.yml` monte `../ingestion` et `../dbt` (le code, jamais les
