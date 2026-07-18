@@ -80,17 +80,28 @@ currently needs it.
 
 ## Key design decisions
 
-### 1. ROI transfert: two indicators, not one score
+### 1. ROI transfert: separate indicators, not one score
 
 `fct_transfer` exposes `roi_financier` (market-value gain during the spell,
-relative to the fee paid) and `cost_per_goal_contribution` (fee paid relative to
+relative to the fee paid), `value_gained_absolute` (the same gain in euros,
+unconditional on fee), and `cost_per_goal_contribution` (fee paid relative to
 goals + assists) as **separate columns**, not blended into one weighted score.
 
 **Why:** merging money and sporting performance into a single number needs an
 arbitrary weighting scheme (why 60/40 and not 50/50?) that's hard to justify and
-impossible to unit-test meaningfully. Two independent numbers stay individually
-interpretable, and each has a precise, testable formula — see the 3 dbt unit tests
+impossible to unit-test meaningfully. Independent numbers stay individually
+interpretable, and each has a precise, testable formula — see the dbt unit tests
 in `dbt/models/marts/_marts__unit_tests.yml`.
+
+`value_gained_absolute` exists because `roi_financier` is a *ratio*, and a ratio
+is undefined at zero cost — it was silently excluding every confirmed free
+transfer (fee = €0) from any financial view, real "great free transfer" stories
+included (Toni Kroos to Bayern Munich, Jan Vertonghen to Ajax). The
+transfermarkt-datasets source docs are explicit that `transfer_fee` is "null if
+unknown, 0 if free transfer" — 0 is a real, confirmed signal, not missing data,
+and treating it like null just because a ratio can't be built from it was
+throwing away real signal. `value_gained_absolute` is a subtraction, not a ratio,
+so it stays defined at fee = 0; see the dashboard's *Best free transfers* section.
 
 ### 2. Snowflake auth: key-pair + a dedicated SERVICE user
 
