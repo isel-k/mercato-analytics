@@ -4,6 +4,14 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+  SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+  SNOWFLAKE_ROLE: TRANSFORMER
+  SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+  SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+  DBT_PROFILES_DIR: ${{ github.workspace }}/.github/dbt_profiles
+
 jobs:
   sqlfluff:
     name: SQL lint (sqlfluff)
@@ -13,8 +21,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install sqlfluff
-      - run: sqlfluff lint dbt/models --dialect snowflake
+      - run: pip install sqlfluff sqlfluff-templater-dbt dbt-snowflake
+      - name: dbt deps
+        working-directory: dbt
+        run: dbt deps
+      - name: sqlfluff lint
+        working-directory: dbt
+        run: sqlfluff lint models
 
   dbt-build:
     name: dbt build (dev)
@@ -28,11 +41,4 @@ jobs:
       - run: pip install dbt-snowflake
       - name: dbt build
         working-directory: dbt
-        env:
-          DBT_PROFILES_DIR: .
-          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: TRANSFORMER
-          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
         run: dbt build --target ci

@@ -1,0 +1,22 @@
+# Profile used by CI (GitHub Actions) only — not for local interactive dbt
+# runs, which use ~/.dbt/profiles.yml instead. Deliberately kept outside
+# dbt/ itself: dbt checks the current working directory for a profiles.yml
+# before falling back to ~/.dbt/profiles.yml, so a profiles.yml living
+# inside dbt/ would silently hijack every local `dbt` command run from
+# there. Safe to commit: every value below is a GitHub Actions secret
+# injected as an env var (see .github/workflows/ci.yml), never a literal
+# secret. Mirrors orchestration/include/dbt_profiles/profiles.yml.
+mercato_analytics:
+  target: ci
+  outputs:
+    ci:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE') }}"
+      database: analytics
+      warehouse: mercato_wh
+      schema: dbt
+      private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY') }}"
+      private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE') }}"
+      threads: 4
