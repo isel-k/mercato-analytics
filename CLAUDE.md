@@ -14,7 +14,7 @@ Le projet suit l'**Analytics Development Lifecycle (ADLC)** de dbt Labs : Plan �
 Sources : Kaggle Transfermarkt (davidcariboo/player-scores) · API football-data.org · FBref (lib soccerdata)
    ↓ dlt (Python, chargement incrémental)
 Snowflake base RAW (schémas : raw_transfermarkt, raw_footballdata, raw_fbref)
-   ↓ dbt (dbt Cloud, projet connecté à ce repo)
+   ↓ dbt (exécuté en local et via Cosmos dans Airflow — pas de dbt Cloud)
 Snowflake base ANALYTICS (staging → intermediate → marts)
    ↓
 Dashboard Evidence (GitHub Pages) · dbt MCP Server (bonus)
