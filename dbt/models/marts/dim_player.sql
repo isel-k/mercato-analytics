@@ -10,6 +10,7 @@ select
     first_name,
     last_name,
     player_name,
+    image_url,
     date_of_birth,
     country_of_birth,
     city_of_birth,

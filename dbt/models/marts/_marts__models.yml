@@ -8,6 +8,8 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: image_url
+        description: Portrait du joueur (CDN Transfermarkt), pour l'affichage dashboard.
 
   - name: dim_club
     description: Une ligne par club.
@@ -16,6 +18,12 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: crest_url
+        description: >
+          Logo du club, construit depuis club_id via le pattern d'URL public du
+          CDN Transfermarkt (`.../wappen/tiny/{club_id}.png`) — aucune colonne
+          crest/logo native dans la source, aucune ingestion supplémentaire
+          nécessaire.
 
   - name: fct_transfer
     description: >
