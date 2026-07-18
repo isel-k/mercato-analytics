@@ -1,0 +1,11 @@
+# Non-secret fields only. Secrets (username, private_key, passphrase) are
+# supplied via env vars in dashboard/.env (gitignored) — see .env.example.
+name: mercato_analytics
+type: snowflake
+options:
+  account: lqnkzbj-es07326
+  database: ANALYTICS
+  warehouse: MERCATO_WH
+  role: TRANSFORMER
+  schema: marts
+  authenticator: snowflake_jwt
