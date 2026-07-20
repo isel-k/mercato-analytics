@@ -111,51 +111,59 @@ limit 6
 
 ## Current transfer window
 
-The most recent transfer window in the data — raw activity, not ROI. Fees take
-time to be confirmed after a deal is announced (often reported as unknown or €0
-for weeks), so most of these won't have a usable financial ROI yet; they'll join
-the rankings below once the data catches up.
+```sql current_window_season
+select
+    transfer_season,
+    case
+        when left(transfer_season, 2)::int >= 50 then 1900 + left(transfer_season, 2)::int
+        else 2000 + left(transfer_season, 2)::int
+    end as season_start_year
+from mercato_analytics.fct_transfer
+order by season_start_year desc
+limit 1
+```
+
+```sql current_window_counts
+select
+    count(*) as total,
+    count(tc.club_id) as with_known_club
+from mercato_analytics.fct_transfer f
+left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+where f.transfer_season = '${current_window_season[0].transfer_season}'
+```
+
+No transfer in the {current_window_season[0].transfer_season} window has a confirmed
+fee yet in the source data — deals are typically reported as unknown or €0 for weeks
+after being announced — so fee and financial ROI aren't shown here; they'll appear in
+the rankings below once the data catches up. Showing the
+{current_window_counts[0].with_known_club} of {current_window_counts[0].total}
+transfers this window with a confirmed destination club, with each player's current
+market value for context.
 
 ```sql current_window
-with season_years as (
-    select
-        transfer_season,
-        case
-            when left(transfer_season, 2)::int >= 50 then 1900 + left(transfer_season, 2)::int
-            else 2000 + left(transfer_season, 2)::int
-        end as season_start_year
-    from mercato_analytics.fct_transfer
-),
-
-latest_season as (
-    select transfer_season
-    from season_years
-    order by season_start_year desc
-    limit 1
-)
-
 select
     p.player_name,
+    p.image_url,
+    tc.club_name as to_club,
+    tc.crest_url,
     p.current_market_value_in_eur,
-    coalesce(fc.club_name, 'Unknown') || ' -> ' || coalesce(tc.club_name, 'Unknown') as transfer_route,
-    f.transfer_date,
-    f.transfer_fee
+    f.transfer_date
 from mercato_analytics.fct_transfer f
 join mercato_analytics.dim_player p on p.player_id = f.player_id
-left join mercato_analytics.dim_club fc on fc.club_id = f.from_club_id
-left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
-where f.transfer_season = (select transfer_season from latest_season)
+join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+where f.transfer_season = '${current_window_season[0].transfer_season}'
     and coalesce(tc.club_name, '') like '${inputs.club.value}'
 order by f.transfer_date desc
 limit 20
 ```
 
 <DataTable data={current_window} rows=20>
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
+    <Column id=to_club title="Club"/>
     <Column id=current_market_value_in_eur title="Current value" fmt=eur0/>
-    <Column id=transfer_route title="Transfer"/>
     <Column id=transfer_date title="Date"/>
-    <Column id=transfer_fee title="Fee" fmt=eur0/>
 </DataTable>
 
 ## Financial ROI — best & worst
