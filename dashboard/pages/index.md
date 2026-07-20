@@ -109,6 +109,61 @@ limit 6
 {/each}
 </div>
 
+## Current transfer window
+
+The most recent transfer window in the data — raw activity, not ROI. Fees take
+time to be confirmed after a deal is announced (often reported as unknown or €0
+for weeks), so most of these won't have a usable financial ROI yet; they'll join
+the rankings below once the data catches up.
+
+```sql current_window
+with season_years as (
+    select
+        transfer_season,
+        case
+            when left(transfer_season, 2)::int >= 50 then 1900 + left(transfer_season, 2)::int
+            else 2000 + left(transfer_season, 2)::int
+        end as season_start_year
+    from mercato_analytics.fct_transfer
+),
+
+latest_season as (
+    select transfer_season
+    from season_years
+    order by season_start_year desc
+    limit 1
+)
+
+select
+    p.player_name,
+    p.image_url,
+    fc.club_name as from_club,
+    fc.crest_url as from_crest,
+    tc.club_name as to_club,
+    tc.crest_url as to_crest,
+    f.transfer_date,
+    f.transfer_fee
+from mercato_analytics.fct_transfer f
+join mercato_analytics.dim_player p on p.player_id = f.player_id
+left join mercato_analytics.dim_club fc on fc.club_id = f.from_club_id
+left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
+where f.transfer_season = (select transfer_season from latest_season)
+    and coalesce(tc.club_name, '') like '${inputs.club.value}'
+order by f.transfer_date desc
+limit 20
+```
+
+<DataTable data={current_window} rows=20>
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
+    <Column id=player_name title="Player"/>
+    <Column id=from_crest title=" " contentType=image height="20px" width="20px" alt=from_club />
+    <Column id=from_club title="From"/>
+    <Column id=to_crest title=" " contentType=image height="20px" width="20px" alt=to_club />
+    <Column id=to_club title="To"/>
+    <Column id=transfer_date title="Date"/>
+    <Column id=transfer_fee title="Fee" fmt=eur0/>
+</DataTable>
+
 ## Financial ROI — best & worst
 
 Transfers (fee ≥ €1M): the 6 biggest gains and the 6 biggest losses in market value
@@ -188,9 +243,9 @@ order by roi_financier desc
 />
 
 <DataTable data={roi_spectrum} rows=12>
-    <Column id=image_url title=" " contentType=image height="32px" width="32px" />
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
-    <Column id=crest_url title=" " contentType=image height="20px" width="20px" />
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
     <Column id=to_club title="Club"/>
     <Column id=roi_financier title="Financial ROI" fmt=pct1
         contentType=colorscale colorScale={['#dc2626', '#f3f4f6', '#16a34a']}
@@ -231,10 +286,10 @@ limit 12
 ```
 
 <DataTable data={cost_efficiency} rows=12>
-    <Column id=image_url title=" " contentType=image height="32px" width="32px" />
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
     <Column id=transfer_date title="Transfer date"/>
-    <Column id=crest_url title=" " contentType=image height="20px" width="20px" />
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
     <Column id=to_club title="Club"/>
     <Column id=transfer_fee title="Fee" fmt=eur0/>
     <Column id=goals_during_spell title="Goals"/>
@@ -283,10 +338,10 @@ limit 12
 />
 
 <DataTable data={best_free_transfers} rows=12>
-    <Column id=image_url title=" " contentType=image height="32px" width="32px" />
+    <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
     <Column id=transfer_date title="Transfer date"/>
-    <Column id=crest_url title=" " contentType=image height="20px" width="20px" />
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
     <Column id=to_club title="Club"/>
     <Column id=market_value_at_transfer title="Value at signing" fmt=eur0/>
     <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
