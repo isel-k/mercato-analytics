@@ -31,7 +31,7 @@ jobs:
         run: sqlfluff lint models
 
   dbt-build:
-    name: dbt build (dev)
+    name: dbt build (ci)
     runs-on: ubuntu-latest
     needs: sqlfluff
     steps:
