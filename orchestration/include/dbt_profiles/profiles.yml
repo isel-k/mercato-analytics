@@ -2,10 +2,16 @@
 # interactive dbt runs, which use ~/.dbt/profiles.yml instead). Safe to commit:
 # every value below is a reference to an env var set in orchestration/.env
 # (gitignored), never a literal secret.
+#
+# Target is `prod` deliberately: the scheduled `transform` DAG is the only
+# thing meant to refresh the bare staging/intermediate/marts schema that the
+# live Evidence dashboard reads from (see dbt/macros/generate_schema_name.sql —
+# only a target literally named `prod` gets the bare schema, every other
+# target name gets prefixed into an isolated schema).
 mercato_analytics:
-  target: dev
+  target: prod
   outputs:
-    dev:
+    prod:
       type: snowflake
       account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
       user: "{{ env_var('SNOWFLAKE_USER') }}"

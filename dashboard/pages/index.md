@@ -126,19 +126,46 @@ limit 1
 ```sql current_window_counts
 select
     count(*) as total,
-    count(tc.club_id) as with_known_club
+    count(tc.club_id) as with_known_club,
+    sum(case when f.transfer_fee > 0 then 1 else 0 end) as fee_confirmed
 from mercato_analytics.fct_transfer f
 left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
 where f.transfer_season = '${current_window_season[0].transfer_season}'
 ```
 
-No transfer in the {current_window_season[0].transfer_season} window has a confirmed
-fee yet in the source data — deals are typically reported as unknown or €0 for weeks
-after being announced — so fee and financial ROI aren't shown here; they'll appear in
-the rankings below once the data catches up. Showing the
+```sql prior_season_fee_rate
+with season_years as (
+    select distinct
+        transfer_season,
+        case
+            when left(transfer_season, 2)::int >= 50 then 1900 + left(transfer_season, 2)::int
+            else 2000 + left(transfer_season, 2)::int
+        end as season_start_year
+    from mercato_analytics.fct_transfer
+),
+
+prior_season as (
+    select transfer_season
+    from season_years
+    order by season_start_year desc
+    limit 1 offset 1
+)
+
+select
+    round(100.0 * sum(case when transfer_fee > 0 then 1 else 0 end) / count(*), 1) as pct_fee_confirmed
+from mercato_analytics.fct_transfer
+where transfer_season = (select transfer_season from prior_season)
+```
+
+This dataset's `transfer_fee` field is sparse by nature, not just slow to update: even
+last season ({prior_season_fee_rate[0].pct_fee_confirmed}% of transfers had a confirmed
+fee) was mostly unknown-fee or free transfers — most transfers never get a number here,
+regardless of age. The {current_window_season[0].transfer_season} window having
+{current_window_counts[0].fee_confirmed} confirmed fees so far fits that pattern rather
+than being behind; fee and financial ROI aren't shown here for that reason. Showing the
 {current_window_counts[0].with_known_club} of {current_window_counts[0].total}
 transfers this window with a confirmed destination club, with each player's current
-market value for context.
+market value for context instead.
 
 ```sql current_window
 select

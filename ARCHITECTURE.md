@@ -228,6 +228,45 @@ that looks redundant.
 Found by actually running the pipeline in a real PR (`dbt build` failed with "dbt
 expects 1 package(s) ... found only 0"), not by inspection.
 
+### 11. `dbt` schema isolation is enforced by target name, not convention
+
+`dbt/macros/generate_schema_name.sql` only gives a model the bare
+staging/intermediate/marts schema when `target.name == 'prod'`. Every other target
+(local `dev`, CI's `ci`) gets its models built into a target-prefixed schema instead
+(`dbt_marts`, `ci_marts`, ...). Local `~/.dbt/profiles.yml` defaults to `dev`;
+`.github/dbt_profiles/profiles.yml` is pinned to `ci`; `orchestration/include/dbt_profiles/profiles.yml`
+(used by Cosmos/Airflow) is pinned to `prod`, since the scheduled `transform` DAG is
+the intended long-term owner of the production schema.
+
+**Why:** found by inspection that local `dev` runs, CI's `dbt build` (on every PR,
+before merge), and the Airflow profile were all writing into the exact same
+`ANALYTICS.marts` schema the live Evidence dashboard reads from — there was no
+environment separation at all, despite `CLAUDE.md` already stating CI should run
+"on a dev environment." A bad local `dbt run` or an untrusted PR's CI check could
+silently overwrite what the public dashboard shows. Until the Airflow `transform`
+DAG is actually deployed to Astronomer, publishing a dbt change to production is a
+deliberate `dbt build --target prod` run — not automatic. This matches how most
+teams keep CI/dev from touching prod without owning a second Snowflake account or
+database: same warehouse and role, isolated by schema and by which target name is
+allowed to resolve to the bare schema.
+
+### 12. `transfer_fee` is structurally sparse — not a freshness problem
+
+Checked directly against the underlying Kaggle CSV rather than assumed: even fully
+concluded seasons only have a fee on a small minority of transfers (25/26: 4.7%,
+24/25: 5.9%, 23/24: 6.3%) — most transfers in this dataset are recorded with no fee
+at all, permanently, not just while a deal is pending. The dashboard's "Current
+transfer window" section originally implied unconfirmed fees would "catch up" once
+the data refreshed; that's not what the data shows.
+
+**Why this matters:** `dashboard/pages/index.md`'s "Current transfer window" section
+now states the actual historical confirmation rate instead of promising the gap will
+close, and filters that raw list to transfers with a known destination club rather
+than showing mostly-blank rows. Confirmed independently that Snowflake already has
+the latest published Kaggle version (dataset version 673, published 2026-07-11, and
+our last pipeline run was 2026-07-17) — so this isn't a stale-pipeline bug either;
+it's an honest characteristic of the source to document, not fix.
+
 ## Tech stack
 
 | Layer | Tool | Notes |

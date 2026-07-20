@@ -6,6 +6,13 @@
 # there. Safe to commit: every value below is a GitHub Actions secret
 # injected as an env var (see .github/workflows/ci.yml), never a literal
 # secret. Mirrors orchestration/include/dbt_profiles/profiles.yml.
+#
+# The target is named `ci`, not `prod` — dbt/macros/generate_schema_name.sql
+# only gives the bare staging/intermediate/marts schema to a target literally
+# named `prod`. Every other target name (this one included) gets its models
+# built into schema-prefixed tables (`ci_staging`, `ci_marts`, ...), so a PR's
+# CI run can never write into the schema the live Evidence dashboard reads
+# from — even though this target has the same Snowflake role/warehouse as prod.
 mercato_analytics:
   target: ci
   outputs:
@@ -16,7 +23,7 @@ mercato_analytics:
       role: "{{ env_var('SNOWFLAKE_ROLE') }}"
       database: analytics
       warehouse: mercato_wh
-      schema: dbt
+      schema: ci
       private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY') }}"
       private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE') }}"
       threads: 4
