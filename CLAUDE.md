@@ -73,6 +73,12 @@ CI/CD : GitHub Actions (sqlfluff, dbt build sur PR, déploiement DAGs)
 
 - Rôles : `LOADER` (dlt, écrit dans RAW), `TRANSFORMER` (dbt, lit RAW, écrit ANALYTICS). Principe du moindre privilège.
 - Warehouse XS par défaut ; resource monitors actifs — surveiller les coûts.
+- **Schémas dbt isolés par target** : seul le target `prod` écrit dans le schéma nu
+  (`staging`/`intermediate`/`marts`, celui lu par le dashboard Evidence en
+  production) ; tout autre target (`dev` local, `ci`) est préfixé automatiquement
+  (`dbt_marts`, `ci_marts`…) par `dbt/macros/generate_schema_name.sql`. Un `dbt run`
+  local ou une CI de PR ne peut donc jamais écraser les données publiées. Voir
+  [`ARCHITECTURE.md`](./ARCHITECTURE.md) décision 11.
 
 ## Git & CI
 

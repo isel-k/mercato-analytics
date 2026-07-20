@@ -35,7 +35,7 @@ Projet portfolio suivant l'[Analytics Development Lifecycle (ADLC)](https://www.
 
 ## 4. Deploy
 
-- CI GitHub Actions ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) : sqlfluff + `dbt build` sur chaque PR (environnement de dev).
+- CI GitHub Actions ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)) : sqlfluff + `dbt build --target ci` sur chaque PR, dans un schéma Snowflake isolé (`ci_marts`…) — jamais celui lu par le dashboard en production. Même isolation pour tout `dbt run` local (target `dev`) ; seul le target `prod` écrit dans le schéma public. Voir [`ARCHITECTURE.md`](./ARCHITECTURE.md) décision 11.
 - Dashboard Evidence : [`deploy-dashboard.yml`](./.github/workflows/deploy-dashboard.yml) publie sur GitHub Pages à chaque push sur `main` touchant `dashboard/`.
 - dbt orchestré via [Cosmos](https://astronomer.github.io/astronomer-cosmos/) dans Airflow (pas de dbt Cloud) — voir [2. Develop](#2-develop).
 - DAGs Airflow : tournent en local (`astro dev start`) pour l'instant. Déploiement
@@ -113,12 +113,10 @@ CI/CD : GitHub Actions (sqlfluff, dbt build sur PR)
   `full_refresh_monthly` — avec alerting sur échec, validés en local
   (`astro dev start`).
 - Restitution : dashboard Evidence (`pages/index.md`) sur `fct_transfer`.
-- CI : `.github/workflows/ci.yml` (sqlfluff + dbt build sur PR) et
-  `deploy-dashboard.yml` (build + publie sur GitHub Pages) écrits et testés
-  localement avec les mêmes commandes — **inertes tant que ce repo n'est pas
-  poussé sur un remote GitHub** avec les secrets `SNOWFLAKE_USER`,
-  `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_PRIVATE_KEY`, `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`
-  configurés (valeurs de `PIPELINE_SVC`), et Pages activé sur "GitHub Actions".
+- CI : `.github/workflows/ci.yml` (sqlfluff + `dbt build --target ci`) et
+  `deploy-dashboard.yml` (build + publie sur GitHub Pages) sont en place et
+  passent réellement sur GitHub Actions, secrets `SNOWFLAKE_*` (valeurs de
+  `PIPELINE_SVC`) configurés côté repo.
 - Déploiement Airflow (Astronomer Cloud) : pas fait — nécessite un compte
   Astronomer (payant au-delà du trial) et un `astro deployment create` que je ne
   peux pas faire à ta place. Reste en local (`astro dev start`) pour l'instant.

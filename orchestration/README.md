@@ -11,7 +11,12 @@ Projet [Astronomer](https://www.astronomer.io/) (Airflow 3, local via `astro dev
 - **`transform`** : `dbt build` via [Cosmos](https://astronomer.github.io/astronomer-cosmos/),
   déclenché par les `Asset` d'`ingest_daily`. Le graphe de tâches est dérivé
   automatiquement du projet dbt (`../dbt`, monté dans le conteneur) — aucune logique
-  métier ici.
+  métier ici. Utilise le target dbt `prod` (`include/dbt_profiles/profiles.yml`) :
+  une fois ce DAG déployé, c'est lui qui devient responsable de tenir à jour le
+  schéma que lit le dashboard Evidence en production (voir
+  [`../ARCHITECTURE.md`](../ARCHITECTURE.md) décision 11) — jusque-là, la mise à
+  jour se fait manuellement via `dbt build --target prod` (voir
+  [`../dbt/README.md`](../dbt/README.md)).
 - **`full_refresh_monthly`** : mêmes modèles dbt en `--full-refresh`, mensuel. Sert
   surtout le jour où un modèle passe en matérialisation `incremental`.
 

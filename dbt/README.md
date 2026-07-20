@@ -17,6 +17,20 @@ fichier ici court-circuiterait silencieusement le profil local pour toute comman
 lancée depuis `dbt/`. Les profils non interactifs (CI, Cosmos) vivent volontairement
 ailleurs : `.github/dbt_profiles/` et `orchestration/include/dbt_profiles/`.
 
+Le target par défaut, `dev`, écrit dans un schéma isolé (`dbt_marts`,
+`dbt_intermediate`…) — jamais dans celui que lit le dashboard Evidence en
+production. `dbt build`/`dbt run` en local sont donc toujours sans risque. Pour
+publier un changement sur le dashboard public (tant que le DAG Airflow `transform`
+n'est pas déployé pour le faire automatiquement), il faut le demander explicitement :
+
+```bash
+dbt build --target prod
+```
+
+Voir [`ARCHITECTURE.md`](../ARCHITECTURE.md) décision 11 pour le détail (le schéma
+nu n'est donné qu'au target littéralement nommé `prod`, dans
+`macros/generate_schema_name.sql`).
+
 ## Sources
 
 - `raw_transfermarkt` (12 tables) et `raw_footballdata` (3 tables), déclarées avec
