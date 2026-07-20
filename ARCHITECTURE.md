@@ -94,14 +94,16 @@ interpretable, and each has a precise, testable formula — see the dbt unit tes
 in `dbt/models/marts/_marts__unit_tests.yml`.
 
 `value_gained_absolute` exists because `roi_financier` is a *ratio*, and a ratio
-is undefined at zero cost — it was silently excluding every confirmed free
-transfer (fee = €0) from any financial view, real "great free transfer" stories
-included (Toni Kroos to Bayern Munich, Jan Vertonghen to Ajax). The
-transfermarkt-datasets source docs are explicit that `transfer_fee` is "null if
-unknown, 0 if free transfer" — 0 is a real, confirmed signal, not missing data,
-and treating it like null just because a ratio can't be built from it was
-throwing away real signal. `value_gained_absolute` is a subtraction, not a ratio,
-so it stays defined at fee = 0; see the dashboard's *Best free transfers* section.
+is undefined at zero cost — it was silently excluding every `fee = €0` transfer
+from any financial view, real "great free transfer" stories included (Toni Kroos
+to Bayern Munich, Jan Vertonghen to Ajax). At the time this was written, the
+transfermarkt-datasets docs' claim that `transfer_fee` is "null if unknown, 0 if
+free transfer" was taken at face value; decision 12 below found that `0` is
+actually an upstream parsing catch-all (loans and unparsed fee formats collapse
+into it too, not just genuine free transfers) — so `value_gained_absolute` is
+best read as "value gained on a transfer with no confirmed fee," not strictly
+"on a free transfer." It's still a subtraction, not a ratio, so it stays defined
+at fee = 0 either way; see the dashboard's *Best free transfers* section.
 
 ### 2. Snowflake auth: key-pair + a dedicated SERVICE user
 
@@ -250,22 +252,39 @@ teams keep CI/dev from touching prod without owning a second Snowflake account o
 database: same warehouse and role, isolated by schema and by which target name is
 allowed to resolve to the bare schema.
 
-### 12. `transfer_fee` is structurally sparse — not a freshness problem
+### 12. `transfer_fee = 0` is not a reliable "confirmed free transfer" signal
 
-Checked directly against the underlying Kaggle CSV rather than assumed: even fully
-concluded seasons only have a fee on a small minority of transfers (25/26: 4.7%,
-24/25: 5.9%, 23/24: 6.3%) — most transfers in this dataset are recorded with no fee
-at all, permanently, not just while a deal is pending. The dashboard's "Current
-transfer window" section originally implied unconfirmed fees would "catch up" once
-the data refreshed; that's not what the data shows.
+Traced this past "the data looks sparse" to an actual upstream bug, not just a
+correlation. `transfermarkt-datasets`' own transform
+([`base_transfers.sql`](https://github.com/dcaribou/transfermarkt-datasets/blob/master/dbt/models/base/transfermarkt_api/base_transfers.sql),
+still present on `master` as of this check) parses the raw fee text with:
 
-**Why this matters:** `dashboard/pages/index.md`'s "Current transfer window" section
-now states the actual historical confirmation rate instead of promising the gap will
-close, and filters that raw list to transfers with a known destination club rather
-than showing mostly-blank rows. Confirmed independently that Snowflake already has
-the latest published Kaggle version (dataset version 673, published 2026-07-11, and
-our last pipeline run was 2026-07-17) — so this isn't a stale-pipeline bug either;
-it's an honest characteristic of the source to document, not fix.
+```sql
+case
+    when transfer_fee in ('-', '?', '') or transfer_fee is null then null
+    when transfer_fee = 'free transfer' then 0
+    when left(transfer_fee, 1) = '€' then ... -- parses "€2.00m" etc.
+    else 0                                    -- <- catches everything else
+end
+```
+
+That `else 0` silently collapses *any* fee text that isn't exactly `€X.Xm`/`€X.Xk` —
+`"Loan fee: €2.00m"`, plain `"Loan"`, `"End of loan"`, non-euro-denominated fees —
+into the same `0` used for a genuine free transfer. The two cases are
+indistinguishable downstream, in both the Kaggle CSV and our warehouse; the raw
+pre-parse text isn't published, so there's no way to recover which is which on our
+end. This directly contradicts the source's own docs, which claim `0` means
+"confirmed free transfer" as a clean, reliable signal — checked and it isn't one.
+
+**Why this matters:** every `transfer_fee = 0` row (`value_gained_absolute`, the
+*Best free transfers* dashboard section, and the near-zero fee rate in the "Current
+transfer window" section) is now understood as "free transfer, loan, or unparsed fee
+text" rather than definitively "free." Confirmed independently that even fully
+concluded seasons only carry a non-zero fee on a small minority of transfers (25/26:
+4.7%, 24/25: 5.9%, 23/24: 6.3%) and that Snowflake already has the latest published
+Kaggle version (673, 2026-07-11) — so this isn't a staleness issue, and not something
+fixable in our own pipeline; it's an upstream bug worth flagging to
+`dcaribou/transfermarkt-datasets` directly rather than working around silently.
 
 ## Tech stack
 

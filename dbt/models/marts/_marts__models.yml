@@ -72,15 +72,18 @@ models:
         description: >
           (valeur marchande en fin de spell - valeur marchande à l'achat - montant
           payé) / montant payé. Un ratio n'a pas de sens à coût nul : nul si le
-          montant du transfert est 0 (transfert gratuit confirmé) ou inconnu
-          (`null` dans la source — Transfermarkt distingue les deux, cf.
-          `value_gained_absolute` pour une mesure qui couvre aussi les transferts
-          gratuits), ou si aucune valorisation n'est disponible en fin de spell.
+          montant du transfert est 0 ou inconnu (`null` dans la source). Le montant
+          à 0 n'est **pas fiable à 100% comme "gratuit confirmé"** : le pipeline
+          amont (`transformarkt-datasets`) parse le texte brut du fee et retombe sur
+          0 pour tout ce qui n'est pas au format `€X.Xm` exact, y compris les prêts
+          ("Loan fee: €X", "Loan") — cf. `ARCHITECTURE.md` décision 12. Voir
+          `value_gained_absolute` pour une mesure qui reste définie à montant = 0.
       - name: value_gained_absolute
         description: >
           valeur marchande en fin de spell - valeur marchande à l'achat - montant
-          payé, en euros. Une soustraction, pas un ratio : reste défini pour les
-          transferts gratuits (montant = 0), contrairement à `roi_financier`. Nul
+          payé, en euros. Une soustraction, pas un ratio : reste défini à montant = 0
+          (gratuit, prêt, ou texte de fee non parsé en amont — cf. `roi_financier` et
+          `ARCHITECTURE.md` décision 12), contrairement à `roi_financier`. Nul
           uniquement si le montant est inconnu ou si aucune valorisation n'est
           disponible en fin de spell.
       - name: cost_per_goal_contribution

@@ -157,15 +157,20 @@ from mercato_analytics.fct_transfer
 where transfer_season = (select transfer_season from prior_season)
 ```
 
-This dataset's `transfer_fee` field is sparse by nature, not just slow to update: even
-last season ({prior_season_fee_rate[0].pct_fee_confirmed}% of transfers had a confirmed
-fee) was mostly unknown-fee or free transfers — most transfers never get a number here,
-regardless of age. The {current_window_season[0].transfer_season} window having
-{current_window_counts[0].fee_confirmed} confirmed fees so far fits that pattern rather
-than being behind; fee and financial ROI aren't shown here for that reason. Showing the
-{current_window_counts[0].with_known_club} of {current_window_counts[0].total}
-transfers this window with a confirmed destination club, with each player's current
-market value for context instead.
+Real transfers do get reported with a fee on Transfermarkt — but this dataset's
+upstream pipeline has a parsing gap: any fee text that isn't formatted exactly as
+`€X.Xm` (loan fees, "Loan"/"End of loan", non-euro amounts) silently collapses to
+€0, indistinguishable from a genuine free transfer, and the raw text isn't kept
+anywhere downstream to recover it. It's a real bug in the source
+([`transfermarkt-datasets`](https://github.com/dcaribou/transfermarkt-datasets/blob/master/dbt/models/base/transfermarkt_api/base_transfers.sql)),
+not something fixable from here — even last season
+({prior_season_fee_rate[0].pct_fee_confirmed}% of transfers had a non-zero fee) shows
+the same pattern. The {current_window_season[0].transfer_season} window has
+{current_window_counts[0].fee_confirmed} non-zero fees so far, consistent with that
+gap rather than being unusually behind; fee and financial ROI aren't shown here for
+that reason. Showing the {current_window_counts[0].with_known_club} of
+{current_window_counts[0].total} transfers this window with a confirmed destination
+club, with each player's current market value for context instead.
 
 ```sql current_window
 select
@@ -328,11 +333,12 @@ limit 12
 
 ## Best free transfers
 
-Confirmed free transfers (fee = €0, not just an unrecorded fee — the source data
-distinguishes the two) ranked by absolute market value gained during the spell.
-`roi_financier` can't express this (dividing by a €0 cost isn't meaningful), so
-this uses `value_gained_absolute` instead — the same value creation, in euros
-rather than as a ratio.
+Transfers recorded at fee = €0 — mostly genuine free transfers, but the source's
+upstream parser also collapses loans and a few unparsed fee formats into the same
+€0, so treat this as "no confirmed fee" rather than a guaranteed-free list — ranked
+by absolute market value gained during the spell. `roi_financier` can't express this
+(dividing by a €0 cost isn't meaningful), so this uses `value_gained_absolute`
+instead — the same value creation, in euros rather than as a ratio.
 
 ```sql best_free_transfers
 select
