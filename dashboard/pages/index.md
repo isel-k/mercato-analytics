@@ -136,11 +136,8 @@ latest_season as (
 
 select
     p.player_name,
-    p.image_url,
-    fc.club_name as from_club,
-    fc.crest_url as from_crest,
-    tc.club_name as to_club,
-    tc.crest_url as to_crest,
+    p.current_market_value_in_eur,
+    coalesce(fc.club_name, 'Unknown') || ' -> ' || coalesce(tc.club_name, 'Unknown') as transfer_route,
     f.transfer_date,
     f.transfer_fee
 from mercato_analytics.fct_transfer f
@@ -154,12 +151,9 @@ limit 20
 ```
 
 <DataTable data={current_window} rows=20>
-    <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
-    <Column id=from_crest title=" " contentType=image height="20px" width="20px" alt=from_club />
-    <Column id=from_club title="From"/>
-    <Column id=to_crest title=" " contentType=image height="20px" width="20px" alt=to_club />
-    <Column id=to_club title="To"/>
+    <Column id=current_market_value_in_eur title="Current value" fmt=eur0/>
+    <Column id=transfer_route title="Transfer"/>
     <Column id=transfer_date title="Date"/>
     <Column id=transfer_fee title="Fee" fmt=eur0/>
 </DataTable>
