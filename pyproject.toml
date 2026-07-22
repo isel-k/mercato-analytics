@@ -10,6 +10,7 @@ dependencies = [
     "sqlfluff-templater-dbt>=3.2",
     "soccerdata>=1.8",
     "kagglehub>=0.3",
+    "beautifulsoup4>=4.15.0",
 ]
 
 [dependency-groups]

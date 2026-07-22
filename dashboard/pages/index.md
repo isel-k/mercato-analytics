@@ -198,6 +198,52 @@ limit 20
     <Column id=transfer_date title="Date"/>
 </DataTable>
 
+## Big clubs Transfermarkt is missing
+
+A handful of major European clubs — Real Madrid among them, with zero transfers
+recorded here since July 2024 — have gone unusually long without a
+Transfermarkt-recorded transfer, even though they're still competing at the top
+level. It's inconsistent per-club staleness in the upstream scraper, not a
+season-wide gap: other big clubs kept getting refreshed over the same period.
+
+Scraping transfermarkt.com directly to fill this in was considered and rejected:
+their `robots.txt` names `ClaudeBot`, `Claude-SearchBot` and `anthropic-ai` with
+`Disallow: /` — not a generic bot block, a targeted one. These rows come from
+Wikipedia instead (checked: no AI-crawler restriction, CC-BY-SA licensed for
+reuse, accessed via the official MediaWiki API), for a curated list of the
+biggest affected clubs. Fee is a best-effort extraction from each player's own
+Wikipedia article — often missing even for a real paid transfer, so a blank fee
+here means "not found in the text", not "confirmed free".
+
+```sql wikipedia_recent_transfers
+select
+    w.club_name,
+    tc.crest_url,
+    w.player_name,
+    w.other_club_name as from_club,
+    w.transfer_date,
+    w.transfer_type,
+    w.fee_amount,
+    w.fee_currency
+from mercato_analytics.fct_wikipedia_transfer w
+left join mercato_analytics.dim_club tc on tc.club_id = w.club_id
+where w.direction = 'in'
+    and coalesce(w.club_name, '') like '${inputs.club.value}'
+order by w.transfer_date desc
+limit 30
+```
+
+<DataTable data={wikipedia_recent_transfers} rows=30>
+    <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=club_name />
+    <Column id=club_name title="Club"/>
+    <Column id=player_name title="Player"/>
+    <Column id=from_club title="From"/>
+    <Column id=transfer_date title="Date"/>
+    <Column id=transfer_type title="Type"/>
+    <Column id=fee_amount title="Fee" fmt=eur0/>
+    <Column id=fee_currency title="Currency"/>
+</DataTable>
+
 ## Financial ROI — best & worst
 
 Transfers (fee ≥ €1M): the 6 biggest gains and the 6 biggest losses in market value

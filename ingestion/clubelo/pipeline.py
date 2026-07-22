@@ -79,7 +79,12 @@ def _get_csv(path: str) -> list[dict]:
             "looks like the host is down or throttling us, not isolated flakiness. "
             "Aborting rather than grinding through the rest of the club list."
         ) from last_error
-    print(f"WARNING: giving up on {path!r} after {MAX_ATTEMPTS_PER_REQUEST} attempts: {last_error}")
+    # flush=True: without it, output redirected to a file/pipe (not a TTY) is
+    # fully buffered and can be silently lost if the process exits before the
+    # buffer fills — happened for real: a run that "completed with no failed
+    # jobs" was still missing ~395 clubs (including Real Madrid) with zero
+    # WARNING lines in the captured log to explain why.
+    print(f"WARNING: giving up on {path!r} after {MAX_ATTEMPTS_PER_REQUEST} attempts: {last_error}", flush=True)
     return []
 
 
@@ -91,13 +96,23 @@ def _discover_clubs() -> list[tuple[str, str]]:
     return list(seen)
 
 
-@dlt.source(name="clubelo")
-def clubelo_source():
-    clubs = _discover_clubs()
+def _already_loaded_clubs(pipeline: dlt.Pipeline) -> set[tuple[str, str]]:
+    """(club, country) pairs that already have ratings loaded — lets a re-run
+    only fetch what's missing instead of re-requesting all ~1700 clubs every
+    time, which matters given a single run already took ~30 minutes."""
+    try:
+        with pipeline.sql_client() as client:
+            rows = client.execute_sql("select distinct club, country from ratings")
+            return {(r[0], r[1]) for r in rows}
+    except Exception:
+        return set()
 
+
+@dlt.source(name="clubelo")
+def clubelo_source(all_clubs: list[tuple[str, str]], clubs_to_fetch: list[tuple[str, str]]):
     @dlt.resource(name="discovered_clubs", write_disposition="replace", primary_key=["club", "country"])
     def discovered_clubs():
-        for club, country in clubs:
+        for club, country in all_clubs:
             yield {"club": club, "country": country}
 
     @dlt.resource(
@@ -106,7 +121,7 @@ def clubelo_source():
         primary_key=["club", "country", "from_date"],
     )
     def ratings():
-        for club, _country in clubs:
+        for club, _country in clubs_to_fetch:
             for period in _get_csv(club):
                 yield {
                     "club": period["Club"],
@@ -120,15 +135,23 @@ def clubelo_source():
     return discovered_clubs, ratings
 
 
-def run() -> None:
+def run(only_missing: bool = False) -> None:
     pipeline = dlt.pipeline(
         pipeline_name="clubelo",
         destination="snowflake",
         dataset_name="raw_clubelo",
     )
-    load_info = pipeline.run(clubelo_source())
+    all_clubs = _discover_clubs()
+    clubs_to_fetch = all_clubs
+    if only_missing:
+        already_loaded = _already_loaded_clubs(pipeline)
+        clubs_to_fetch = [c for c in all_clubs if c not in already_loaded]
+        print(f"{len(already_loaded)} clubs already loaded, fetching {len(clubs_to_fetch)} missing ones")
+    load_info = pipeline.run(clubelo_source(all_clubs, clubs_to_fetch))
     print(load_info)
 
 
 if __name__ == "__main__":
-    run()
+    import sys
+
+    run(only_missing="--only-missing" in sys.argv)

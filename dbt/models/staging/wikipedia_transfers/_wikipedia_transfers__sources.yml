@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: wikipedia_transfers
+    description: >
+      Transferts récents (2 dernières saisons) pour un ensemble ciblé de grands
+      clubs européens, extraits des pages "saison" Wikipedia — comble le trou de
+      couverture trouvé dans le snapshot Kaggle Transfermarkt pour ces clubs (voir
+      `ARCHITECTURE.md` décision 14). Complémentaire, pas un remplacement : ne
+      couvre que `ingestion/wikipedia_transfers/pipeline.py::TARGET_CLUBS`.
+    database: raw
+    schema: raw_wikipedia_transfers
+    config:
+      loaded_at_field: "to_timestamp_ntz(_dlt_load_id::number(38,0))"
+      freshness:
+        warn_after: { count: 14, period: day }
+        error_after: { count: 45, period: day }
+    tables:
+      - name: club_transfers
+        description: >
+          Une ligne par mouvement entrant/sortant pour un club ciblé. `fee_text`
+          est une extraction best-effort depuis la prose de la page du joueur —
+          souvent nulle même pour un vrai transfert payant (formulation absente
+          ou non reconnue), à ne jamais traiter comme "confirmé gratuit".

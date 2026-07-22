@@ -331,6 +331,72 @@ of them spot-checked, none of them silently wrong as far as this review could
 tell — a smaller, correct signal beats a complete, unreliable one, same principle
 as decision 12 above.
 
+### 14. Wikipedia patches Transfermarkt's biggest coverage gap — transfermarkt.com scraping was explicitly rejected
+
+Investigating "why don't I see Real Madrid's transfers" led somewhere bigger than
+the fee-parsing bug in decision 12: Real Madrid has **zero** transfers recorded in
+the Kaggle snapshot since July 2024, while other big clubs (Man Utd, Man City,
+PSG) kept getting at least partial 2025-26 updates over the same period — a whole
+season-count check confirmed the trend (23/24: 3,889 transfers; 24/25: 3,118;
+25/26: 2,135; 26/27 so far: 22, none involving a top-5-league club). This is
+inconsistent per-club scraper staleness upstream, not a season-wide cutoff.
+
+**Why not fix it by scraping transfermarkt.com directly?** Checked their
+`robots.txt` before writing a line of scraper code — it explicitly lists
+`ClaudeBot`, `Claude-SearchBot`, and `anthropic-ai` with `Disallow: /`, alongside
+every other major AI crawler (`GPTBot`, `PerplexityBot`, `Deepseek`, `Bytespider`)
+and even `wget`. That's not a generic anti-bot measure; it's specifically aimed at
+AI-driven automated access. Writing a scraper — even one the user would run
+themselves, with a generic user-agent — would circumvent the intent of that
+block through a technicality rather than respect it, so this was declined outright
+regardless of technical feasibility.
+
+**Wikipedia instead**: checked directly, no Claude/AI-specific disallow, content
+is CC-BY-SA-licensed for reuse, and the MediaWiki API (not raw HTML scraping) is
+the documented way to access it programmatically.
+`ingestion/wikipedia_transfers/pipeline.py` targets a curated list of ~30 big
+European clubs identified as unusually stale (current ClubElo rating >= 1700, no
+Transfermarkt transfer in > 300 days — reuses decision 13's Elo data), pulling
+each one's "{season} {club} season" page's Transfers tables plus, where a real
+fee is plausible, a best-effort regex search of the scoring player's own article.
+
+Real, non-obvious bugs hit and fixed here, each one changing the result from
+"silently wrong" to "correct" rather than being cosmetic:
+
+- **Blindly trusting the top search hit was wrong.** Searching "2026–27
+  Villarreal CF season" (a page that doesn't exist yet) returned "2026–27 Real
+  Madrid CF season" as Wikipedia's #1 hit — a naive caller would have silently
+  attributed Real Madrid's transfers to Villarreal. Fixed by requiring the season
+  string *and* a distinguishing club-name token to both appear in a candidate's
+  title before accepting it, checking the top 3 hits rather than just the first.
+- **Wikipedia's own club-season pages don't agree on column names.** A literal
+  `"From"/"To"` check (Real Madrid's convention) silently dropped every real
+  transfer row for any club using a different one — and there are at least five:
+  `"Transfer from"/"Transfer to"` (Barcelona), `"Transferred from"/"Transferred
+  to"` (Monaco, Benfica), `"Moving from"/"Moving to"` (Juventus), `"Loaned
+  from"/"Loaned to"` plus `"Returning from"/"Returning to"` (Inter Milan, separate
+  loan-specific tables). This wasn't network flakiness — it silently zeroed out
+  14 of 31 target clubs identically on every run, and looked exactly like
+  intermittent failure until each affected club was checked individually. Fixed
+  by matching on `"from"`/endswith-`"to"` substrings instead of exact names.
+- **Some pages put a real fee directly in a structured "Fee" column** (Barcelona:
+  `"€70M + €10M variables"`) — more reliable than the prose-search fallback, and
+  free (no extra request), so it's used first when present.
+- Wikipedia footnote markers (`"15 June 2026[c]"`, `"Monaco[a]"`) land in the same
+  table cell as the date/club/player text and silently break parsing or leave
+  stray brackets in the data — stripped everywhere text comes straight from a
+  cell, not just where first noticed (dates only, initially).
+- `_api_get` originally had no retry logic; a single transient timeout silently
+  dropped a club's data with no error and no log line — added retries + a
+  per-club try/except, same pattern as decision 13's ClubElo pipeline, after
+  confirming a plain unretried failure was a real, repeatable cause of missing
+  clubs (not just a hypothetical).
+
+`fct_wikipedia_transfer` stays a separate mart, not merged into `fct_transfer`:
+these transfers are too recent to have spell/performance data for ROI, and
+players aren't resolved to `dim_player.player_id`. See the "Big clubs
+Transfermarkt is missing" dashboard section.
+
 ## Tech stack
 
 | Layer | Tool | Notes |

@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_wikipedia_transfers__club_transfers
+    description: >
+      Une ligne par mouvement entrant/sortant pour un club ciblé (voir
+      `ARCHITECTURE.md` décision 14). Complémentaire à `fct_transfer`, pas fusionné
+      dedans : ces transferts très récents n'ont pas encore de spell/performance
+      pour calculer un ROI, et `player_name`/`other_club_name` restent en texte
+      libre (pas de `player_id`/`club_id` résolu côté joueur ou club adverse).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - club_id
+              - player_name
+              - transfer_date
+              - direction
+    columns:
+      - name: club_id
+        description: Référence vers `dim_club.club_id` — le club ciblé (celui dont la page a été lue), pas forcément le club acquéreur.
+        data_tests:
+          - not_null
+      - name: fee_amount
+        description: >
+          Montant extrait de la prose de la page du joueur, best-effort — nul même
+          pour de vrais transferts payants si la formulation n'a pas été reconnue.
+          Ne jamais traiter un nul ici comme "confirmé gratuit". Devise d'origine
+          dans `fee_currency`, pas de conversion en EUR.

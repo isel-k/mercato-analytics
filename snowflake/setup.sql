@@ -36,6 +36,7 @@ create schema if not exists raw.raw_transfermarkt;
 create schema if not exists raw.raw_footballdata;
 create schema if not exists raw.raw_fbref;
 create schema if not exists raw.raw_clubelo;
+create schema if not exists raw.raw_wikipedia_transfers;
 
 -- rôles -------------------------------------------------------------------
 create role if not exists loader;
@@ -53,10 +54,12 @@ grant create table on schema raw.raw_transfermarkt to role loader;
 grant create table on schema raw.raw_footballdata to role loader;
 grant create table on schema raw.raw_fbref to role loader;
 grant create table on schema raw.raw_clubelo to role loader;
+grant create table on schema raw.raw_wikipedia_transfers to role loader;
 grant all on future tables in schema raw.raw_transfermarkt to role loader;
 grant all on future tables in schema raw.raw_footballdata to role loader;
 grant all on future tables in schema raw.raw_fbref to role loader;
 grant all on future tables in schema raw.raw_clubelo to role loader;
+grant all on future tables in schema raw.raw_wikipedia_transfers to role loader;
 
 -- TRANSFORMER : lit RAW, écrit ANALYTICS (utilisé par dbt) -----------------
 grant usage on warehouse mercato_wh to role transformer;

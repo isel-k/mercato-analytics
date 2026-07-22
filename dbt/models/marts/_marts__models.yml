@@ -136,3 +136,26 @@ models:
               arguments:
                 to: ref('dim_team')
                 field: team_id
+
+  - name: fct_wikipedia_transfer
+    description: >
+      Une ligne par mouvement entrant/sortant récent pour un ensemble ciblé de
+      grands clubs européens (voir `ARCHITECTURE.md` décision 14) — comble le trou
+      de couverture trouvé dans `fct_transfer` pour ces clubs précisément (ex. le
+      Real Madrid, sans transfert Transfermarkt enregistré depuis juillet 2024).
+      Complémentaire à `fct_transfer`, pas fusionné dedans : pas de `player_id`
+      résolu, pas de spell/performance/ROI possible pour des transferts aussi
+      récents. `fee_amount` est une extraction best-effort depuis la prose
+      Wikipedia — souvent nul même pour un vrai transfert payant, ne jamais le
+      traiter comme "confirmé gratuit".
+    columns:
+      - name: club_id
+        description: Club ciblé (`dim_club.club_id`) — pas forcément le club acquéreur, cf. `direction`.
+        data_tests:
+          - not_null
+      - name: direction
+        description: "'in' si le club ciblé est l'acquéreur, 'out' s'il est le vendeur."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["in", "out"]
