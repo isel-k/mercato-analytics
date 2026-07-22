@@ -18,12 +18,25 @@ CC-BY-SA pensée pour la réutilisation, et l'API MediaWiki est le moyen documen
 et voulu d'y accéder par programme — ce pipeline utilise cette API, pas du
 scraping HTML brut.
 
+## Ciblage des clubs : dynamique, pas une liste figée
+
+`_discover_target_clubs()` interroge `analytics.marts` à chaque run (`dim_club`
++ `fct_transfer`) pour trouver les grands clubs (`current_elo >= 1700`, cf.
+`ARCHITECTURE.md` décision 13) sans transfert Transfermarkt depuis plus de
+~300 jours — le pipeline se remet à jour tout seul, pas de liste à maintenir à
+la main. Nécessite que le rôle `LOADER` (habituellement RAW seulement) ait un
+accès lecture seule à `analytics.marts` (voir `snowflake/setup.sql`).
+
+Cas particulier géré explicitement : un club sans correspondance ClubElo (donc
+`current_elo` nul) ne peut jamais franchir la barre `>= 1700`, peu importe son
+ancienneté — c'est exactement le cas du Real Madrid (ses propres données
+ClubElo n'ont toujours pas chargé, cause non résolue). Gardé dans
+`ALWAYS_INCLUDE_CLUBS` plutôt que silencieusement perdu ; à retirer une fois le
+problème ClubElo réellement corrigé.
+
 ## Ce qui est chargé
 
-Pour chaque club de `TARGET_CLUBS` (grands clubs européens identifiés comme
-`clubelo.elo >= 1700` mais sans transfert Transfermarkt depuis plus de ~300 jours
-— voir la requête dans `ARCHITECTURE.md` décision 14 pour regénérer cette liste) et
-pour les 2 dernières saisons :
+Pour chaque club ciblé, pour les 2 dernières saisons :
 
 1. Table des transferts "In"/"Out" de la page `{saison} {club} season` — joueur,
    club d'origine/destination, date, type. Fiable, mais **pas standardisé** :

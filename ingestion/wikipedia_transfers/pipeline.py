@@ -29,9 +29,14 @@ Two-stage per club:
    confirmed-fee moves, absent even when a fee exists elsewhere in the same
    article) — expect real false negatives, not a complete fee dataset.
 
-Only a curated list of clubs is targeted (TARGET_CLUBS below) — big European clubs
-identified as having gone unusually long without a Transfermarkt-recorded transfer.
-Not a general replacement for Transfermarkt; a targeted patch for its biggest gap.
+Clubs are targeted dynamically, not from a hardcoded list: `_discover_target_clubs`
+queries `analytics.marts` (dim_club.current_elo — decision 13's ClubElo data —
+joined against fct_transfer's latest transfer per club) for big clubs (current_elo
+>= 1700) that have gone unusually long without a Transfermarkt-recorded transfer.
+This makes the pipeline self-maintaining: as Transfermarkt's own coverage catches
+up (or a new club falls behind), the target list adjusts on its own without a
+manual list to edit. Not a general replacement for Transfermarkt; a targeted patch
+for its biggest gap, wherever that gap currently is.
 """
 
 import datetime as dt
@@ -42,29 +47,69 @@ import urllib.parse
 import urllib.request
 
 import dlt
+import snowflake.connector
 from bs4 import BeautifulSoup
 
 USER_AGENT = "mercato-analytics-portfolio-project/1.0 (https://github.com/isel-k/mercato-analytics)"
 API_URL = "https://en.wikipedia.org/w/api.php"
 SECONDS_BETWEEN_REQUESTS = 0.5
 
-# Big European clubs found to have gone > ~300 days without a Transfermarkt-
-# recorded transfer despite a current ClubElo rating >= 1700 (i.e. still a top-
-# division, notable club) — see the query in this module's README. Re-run that
-# query periodically; this list will drift as Transfermarkt's own coverage
-# catches up (or doesn't) for a given club.
-TARGET_CLUBS = [
-    (989, "AFC Bournemouth"), (162, "AS Monaco"), (11, "Arsenal FC"),
-    (12, "Associazione Sportiva Roma"), (800, "Atalanta BC"), (13, "Atlético de Madrid"),
-    (1148, "Brentford FC"), (1237, "Brighton & Hove Albion"), (940, "Celta de Vigo"),
-    (631, "Chelsea FC"), (2282, "Club Brugge KV"), (29, "Everton FC"),
-    (131, "FC Barcelona"), (720, "FC Porto"), (931, "Fulham FC"), (46, "Inter Milan"),
-    (506, "Juventus FC"), (1082, "LOSC Lille"), (399, "Leeds United"),
-    (31, "Liverpool FC"), (762, "Newcastle United"), (703, "Nottingham Forest"),
-    (1041, "Olympique Lyon"), (244, "Olympique Marseille"), (383, "PSV Eindhoven"),
-    (150, "Real Betis Balompié"), (418, "Real Madrid"), (60, "SC Freiburg"),
-    (294, "SL Benfica"), (289, "Sunderland AFC"), (1050, "Villarreal CF"),
-]
+# A club with no ClubElo match (decision 13: ~30% of dim_club, non-European or
+# unresolved by name-matching) has a null current_elo and can never clear the
+# dynamic query's `current_elo >= 1700` bar — no matter how stale its
+# Transfermarkt data gets. Real Madrid is exactly this case (its own ClubElo
+# data failed to load after repeated attempts, cause still unresolved) and is
+# precisely the club that motivated this whole pipeline, so it's kept as an
+# explicit addition rather than silently dropped once its Elo issue is
+# eventually fixed, remove it from here.
+ALWAYS_INCLUDE_CLUBS = [(418, "Real Madrid")]
+
+STALE_DAYS_THRESHOLD = 300
+MIN_CURRENT_ELO = 1700
+
+
+def _discover_target_clubs() -> list[tuple[int, str]]:
+    """Big clubs (current_elo >= 1700) with no Transfermarkt-recorded transfer
+    in over STALE_DAYS_THRESHOLD days. Queries analytics.marts directly (LOADER
+    is granted read-only access to that one schema for exactly this — see
+    snowflake/setup.sql) rather than dlt's own RAW-database pipeline
+    connection, since this reads dbt's output, not this pipeline's own data."""
+    creds = dict(dlt.secrets["destination.snowflake.credentials"])
+    conn = snowflake.connector.connect(
+        account=creds["host"],
+        user=creds["username"],
+        role=creds["role"],
+        warehouse=creds["warehouse"],
+        database="ANALYTICS",
+        schema="marts",
+        private_key_file=creds["private_key_path"],
+        private_key_file_pwd=creds["private_key_passphrase"],
+    )
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            select tc.club_id, tc.club_name
+            from dim_club tc
+            left join (
+                select to_club_id as club_id, max(transfer_date) as latest_transfer_date
+                from fct_transfer
+                group by 1
+            ) lt on lt.club_id = tc.club_id
+            where tc.current_elo >= %(min_elo)s
+                and (
+                    lt.latest_transfer_date is null
+                    or datediff(day, lt.latest_transfer_date, current_date()) > %(stale_days)s
+                )
+            order by tc.club_name
+            """,
+            {"min_elo": MIN_CURRENT_ELO, "stale_days": STALE_DAYS_THRESHOLD},
+        )
+        discovered = [(row[0], row[1]) for row in cur.fetchall()]
+    finally:
+        conn.close()
+    seen_ids = {club_id for club_id, _ in discovered}
+    return discovered + [c for c in ALWAYS_INCLUDE_CLUBS if c[0] not in seen_ids]
 
 # How many seasons back from the current one to check per club (current season
 # a club is refreshed for depends on today's date, computed in current_seasons()).
@@ -324,10 +369,10 @@ def _club_season_rows(club_id: int, club_name: str, season: str) -> list[dict]:
 
 
 @dlt.source(name="wikipedia_transfers")
-def wikipedia_transfers_source():
+def wikipedia_transfers_source(target_clubs: list[tuple[int, str]]):
     @dlt.resource(name="club_transfers", write_disposition="merge", primary_key=["club_id", "player_name", "date", "direction"])
     def club_transfers():
-        for club_id, club_name in TARGET_CLUBS:
+        for club_id, club_name in target_clubs:
             for season in current_seasons(SEASONS_BACK):
                 try:
                     yield from _club_season_rows(club_id, club_name, season)
@@ -338,12 +383,14 @@ def wikipedia_transfers_source():
 
 
 def run() -> None:
+    target_clubs = _discover_target_clubs()
+    print(f"targeting {len(target_clubs)} clubs: {[name for _, name in target_clubs]}")
     pipeline = dlt.pipeline(
         pipeline_name="wikipedia_transfers",
         destination="snowflake",
         dataset_name="raw_wikipedia_transfers",
     )
-    load_info = pipeline.run(wikipedia_transfers_source())
+    load_info = pipeline.run(wikipedia_transfers_source(target_clubs))
     print(load_info)
 
 

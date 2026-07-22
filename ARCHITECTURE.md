@@ -354,11 +354,28 @@ regardless of technical feasibility.
 **Wikipedia instead**: checked directly, no Claude/AI-specific disallow, content
 is CC-BY-SA-licensed for reuse, and the MediaWiki API (not raw HTML scraping) is
 the documented way to access it programmatically.
-`ingestion/wikipedia_transfers/pipeline.py` targets a curated list of ~30 big
-European clubs identified as unusually stale (current ClubElo rating >= 1700, no
-Transfermarkt transfer in > 300 days — reuses decision 13's Elo data), pulling
-each one's "{season} {club} season" page's Transfers tables plus, where a real
-fee is plausible, a best-effort regex search of the scoring player's own article.
+`ingestion/wikipedia_transfers/pipeline.py` targets big European clubs identified
+as unusually stale (`dim_club.current_elo >= 1700` — reuses decision 13's Elo
+data — with no Transfermarkt transfer in > 300 days), pulling each one's
+"{season} {club} season" page's Transfers tables plus, where a real fee is
+plausible, a best-effort regex search of the scoring player's own article.
+
+Club targeting is **dynamic, not a hardcoded list** — `_discover_target_clubs()`
+runs that staleness query against `analytics.marts` directly at the start of
+every pipeline run, so the target set self-adjusts as Transfermarkt's own
+coverage catches up (or falls behind) for a given club, with no list to
+maintain by hand. This needed the LOADER role — otherwise RAW-only — granted
+read-only access to the `marts` schema specifically for this (see
+`snowflake/setup.sql`); turned out LOADER already had that access by the time
+this was implemented, for reasons not fully tracked down, but the explicit
+grant is kept anyway as the documented, intended permission rather than an
+undocumented accident. One real gap this surfaced: a club with no ClubElo match
+(decision 13, ~30% of `dim_club`) has a null `current_elo` and can never clear
+the `>= 1700` bar, no matter how stale its data gets — which silently excludes
+Real Madrid, the exact club that motivated this pipeline, since its own ClubElo
+data still hasn't loaded (open issue). Kept as an explicit
+`ALWAYS_INCLUDE_CLUBS` addition rather than a silent gap, with a comment to
+remove it once the underlying Elo issue is actually fixed.
 
 Real, non-obvious bugs hit and fixed here, each one changing the result from
 "silently wrong" to "correct" rather than being cosmetic:

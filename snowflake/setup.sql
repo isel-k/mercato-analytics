@@ -61,6 +61,16 @@ grant all on future tables in schema raw.raw_fbref to role loader;
 grant all on future tables in schema raw.raw_clubelo to role loader;
 grant all on future tables in schema raw.raw_wikipedia_transfers to role loader;
 
+-- Exception délibérée au principe "LOADER n'écrit que dans RAW" : le pipeline
+-- ingestion/wikipedia_transfers a besoin de LIRE analytics.marts (dim_club,
+-- fct_transfer) pour décider dynamiquement quels clubs cibler (cf.
+-- ARCHITECTURE.md décision 14 mise à jour) — jamais d'écriture, lecture seule,
+-- un seul schéma.
+grant usage on database analytics to role loader;
+grant usage on schema analytics.marts to role loader;
+grant select on all tables in schema analytics.marts to role loader;
+grant select on future tables in schema analytics.marts to role loader;
+
 -- TRANSFORMER : lit RAW, écrit ANALYTICS (utilisé par dbt) -----------------
 grant usage on warehouse mercato_wh to role transformer;
 grant usage on database raw to role transformer;

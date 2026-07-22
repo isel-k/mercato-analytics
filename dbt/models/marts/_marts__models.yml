@@ -24,6 +24,13 @@ models:
           CDN Transfermarkt (`.../wappen/tiny/{club_id}.png`) — aucune colonne
           crest/logo native dans la source, aucune ingestion supplémentaire
           nécessaire.
+      - name: current_elo
+        description: >
+          Rating ClubElo le plus récent connu pour ce club (pas "à une date
+          donnée" — voir `int_transfers__club_elo_at_transfer` pour ça). Nul
+          pour les clubs hors Europe ou non résolus par
+          `clubelo_club_mapping` (~70% de couverture, cf. `ARCHITECTURE.md`
+          décision 13) — à ne jamais lire comme "club faible".
 
   - name: fct_transfer
     description: >
