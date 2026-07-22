@@ -410,9 +410,53 @@ Real, non-obvious bugs hit and fixed here, each one changing the result from
   clubs (not just a hypothetical).
 
 `fct_wikipedia_transfer` stays a separate mart, not merged into `fct_transfer`:
-these transfers are too recent to have spell/performance data for ROI, and
-players aren't resolved to `dim_player.player_id`. See the "Big clubs
-Transfermarkt is missing" dashboard section.
+these transfers are too recent to have spell/performance data for the same ROI
+formula. See the "Big clubs Transfermarkt is missing" dashboard section.
+
+### 15. Realized ROI for recent departures — and a real bug in a Transfermarkt column that would have silently corrupted it
+
+A direct follow-up question ("was Chelsea's sale of Marc Cucurella to Real
+Madrid a good one?") turned up that `fct_transfer` isn't just missing *recent*
+transfers for the clubs in decision 14 — Cucurella has **zero** rows in
+`fct_transfer` at all, including his real, well-documented 2022 Brighton → Chelsea
+move from years earlier. Checked more broadly: of ~20 sampled players leaving a
+target club this window (Griezmann, Timothy Weah, Ansu Fati among them),
+essentially none had any `fct_transfer` history — this is a much wider gap in
+this Kaggle snapshot than decision 14 alone suggested, not specific to
+under-covered clubs.
+
+Without the original acquisition transfer, `roi_financier`'s formula (needs a
+`transfer_fee` paid) can't be computed for these players. Built a different,
+still-answerable metric instead: `int_wikipedia_transfers__value_trajectory`
+resolves each Wikipedia-sourced departure to a `dim_player.player_id` (name
+match, narrowed by requiring a valuation actually recorded at that specific
+club — collisions like the 10 players named "Eduardo" essentially never share
+a club) and reads `stg_transfermarkt__player_valuations` for the earliest and
+latest known valuation *while at that specific club*. `fct_wikipedia_transfer`
+exposes this as `value_gained_during_tenure` (value created or lost purely
+during the selling club's ownership, independent of the unknown original fee)
+and `fee_vs_last_valuation` (did they sell for more or less than the player's
+own recent market value).
+
+**A real, serious bug found while building this, not a hypothetical**: the
+first version joined on `player_valuations.current_club_id`, which looked like
+the obvious key. Checked Antoine Griezmann's full valuation history to sanity
+this before trusting it — a valuation dated 2010, while he played for Real
+Sociedad, carries `current_club_id = 13`, which is **Atlético Madrid's** id
+(his most recent club as of whenever this Kaggle snapshot was last scraped),
+even though the same row's `current_club_name` correctly says "Real Sociedad".
+`current_club_id` in this source is pinned to the player's *current* club on
+every historical row, not the club they were actually at on that valuation
+date. Matching on it would have silently attributed a player's entire
+career-long value growth to whichever club they happen to play for now — the
+first (wrong) run of this query showed Chelsea "gaining" +€49.3M in value from
+Cucurella, when almost all of that appreciation actually happened years
+earlier at Eibar/Getafe/Brighton, before Chelsea signed him at all. Fixed by
+joining on `current_club_name` instead, which is textually accurate across
+the whole history; re-running gave a materially different, correct-looking
+result (a small value *decline* during the actual Chelsea spell, with the sale
+fee still landing above his most recent valuation) that matches Cucurella's
+real, public transfer history.
 
 ## Tech stack
 

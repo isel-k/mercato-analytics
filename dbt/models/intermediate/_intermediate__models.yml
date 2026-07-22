@@ -47,3 +47,19 @@ models:
         data_tests:
           - unique
           - not_null
+
+  - name: int_wikipedia_transfers__value_trajectory
+    description: >
+      Pour chaque ligne de `fct_wikipedia_transfer`, résout le joueur (nom +
+      présence d'une valorisation à ce club précis dans
+      `stg_transfermarkt__player_valuations`) puis calcule sa valorisation la
+      plus ancienne et la plus récente pendant son passage à ce club, avant la
+      date du transfert. Matché sur `current_club_name`, pas `current_club_id` —
+      ce dernier s'est révélé non fiable (toujours égal au club le plus récent
+      du joueur, quelle que soit la date de la ligne) : voir `ARCHITECTURE.md`
+      décision 15 pour le cas réel qui l'a révélé (Griezmann, une valorisation
+      2010 à la Real Sociedad portant le `current_club_id` de l'Atlético Madrid).
+    columns:
+      - name: club_id
+        data_tests:
+          - not_null

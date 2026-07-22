@@ -343,15 +343,23 @@ def _club_season_rows(club_id: int, club_name: str, season: str) -> list[dict]:
             elif fee_from_table:
                 type_text = "Transfer"
 
+        # Search near whichever club is the *destination* of this specific
+        # row — club_name itself for an "in" row (arriving here), other_text
+        # for an "out" row (leaving to there). Missing this for "out" rows
+        # left a real gap: found for real that Chelsea's own "out" record for
+        # Marc Cucurella had no fee at all, even though Real Madrid's "in"
+        # record for the exact same transfer did — same event, two page
+        # perspectives, only one of which was searched.
+        destination_club = club_name if direction == "in" else other_text
         fee = fee_from_table
         if (
             fee is None
-            and direction == "in"
             and type_text.strip().lower() not in NO_FEE_TYPES
             and player_href
+            and destination_club
         ):
             player_title = urllib.parse.unquote(player_href.removeprefix("/wiki/"))
-            fee = extract_fee(player_title, club_name)
+            fee = extract_fee(player_title, destination_club)
         out.append({
             "club_id": club_id,
             "club_name": club_name,

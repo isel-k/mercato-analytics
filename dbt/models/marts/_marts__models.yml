@@ -150,9 +150,10 @@ models:
       grands clubs européens (voir `ARCHITECTURE.md` décision 14) — comble le trou
       de couverture trouvé dans `fct_transfer` pour ces clubs précisément (ex. le
       Real Madrid, sans transfert Transfermarkt enregistré depuis juillet 2024).
-      Complémentaire à `fct_transfer`, pas fusionné dedans : pas de `player_id`
-      résolu, pas de spell/performance/ROI possible pour des transferts aussi
-      récents. `fee_amount` est une extraction best-effort depuis la prose
+      Complémentaire à `fct_transfer`, pas fusionné dedans : reste une table à part
+      même si le joueur est résolu (`player_id` via `int_wikipedia_transfers__value_trajectory`),
+      car pas de spell/performance pour calculer les mêmes indicateurs de
+      `fct_transfer`. `fee_amount` est une extraction best-effort depuis la prose
       Wikipedia — souvent nul même pour un vrai transfert payant, ne jamais le
       traiter comme "confirmé gratuit".
     columns:
@@ -166,3 +167,24 @@ models:
           - accepted_values:
               arguments:
                 values: ["in", "out"]
+      - name: value_at_arrival
+        description: >
+          Valorisation connue la plus ancienne du joueur pendant qu'il était à ce
+          club précis, avant la date du transfert (`stg_transfermarkt__player_valuations`,
+          filtré sur `current_club_name` — pas `current_club_id`, qui s'est révélé
+          non fiable dans cette source, cf. `ARCHITECTURE.md` décision 15). Sert de
+          proxy pour "valeur à l'arrivée" quand le transfert d'acquisition original
+          n'existe pas dans `fct_transfer` (le cas pour la grande majorité de ces
+          joueurs).
+      - name: value_at_departure
+        description: Même logique que `value_at_arrival`, valorisation connue la plus récente avant la date du transfert.
+      - name: value_gained_during_tenure
+        description: >
+          `value_at_departure - value_at_arrival`, uniquement pour `direction = 'out'` :
+          plus-value (ou perte) de valeur marchande pendant tout le passage au club
+          vendeur, indépendamment du prix d'acquisition d'origine (souvent inconnu).
+      - name: fee_vs_last_valuation
+        description: >
+          `fee_amount - value_at_departure`, uniquement pour `direction = 'out'` :
+          le club vendeur a-t-il vendu au-dessus ou en-dessous de la dernière
+          valorisation connue du joueur ? Nul si l'un des deux manque.
