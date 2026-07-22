@@ -19,3 +19,7 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+seeds:
+  mercato_analytics:
+    +schema: staging

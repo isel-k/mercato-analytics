@@ -90,6 +90,19 @@ models:
         description: >
           Montant payé / (buts + passes décisives pendant le spell). Nul si aucun but
           ni passe décisive n'a été enregistré durant le spell.
+      - name: from_club_elo
+        description: >
+          Rating ClubElo du club vendeur à la date du transfert (période contenant
+          `transfer_date`, ou période la plus proche à défaut). Nul si le club
+          vendeur n'est pas européen ou n'a pas de correspondance dans
+          `clubelo_club_mapping` (~70% de couverture, cf. `ARCHITECTURE.md`).
+      - name: to_club_elo
+        description: Même logique que `from_club_elo`, pour le club acquéreur.
+      - name: club_elo_delta
+        description: >
+          `to_club_elo - from_club_elo` : positif si le joueur rejoint un club plus
+          fort selon ClubElo, négatif sinon. Nul si `from_club_elo` ou
+          `to_club_elo` est nul.
 
   - name: dim_team
     description: >

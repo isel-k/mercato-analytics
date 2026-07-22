@@ -34,3 +34,16 @@ models:
       - name: transfer_id
         data_tests:
           - unique
+
+  - name: int_transfers__club_elo_at_transfer
+    description: >
+      Une ligne par transfert, avec le rating ClubElo du club vendeur et du club
+      acquéreur à la date du transfert (`clubelo_club_mapping`, cf.
+      `ARCHITECTURE.md` décision 13). Nul des deux côtés où aucune correspondance
+      n'existe — clubs hors Europe, ou non résolus par le mapping (~70% de
+      couverture).
+    columns:
+      - name: transfer_id
+        data_tests:
+          - unique
+          - not_null

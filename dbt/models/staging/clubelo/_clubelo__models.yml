@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_clubelo__ratings
+    description: >
+      Une ligne par période de rating Elo constant pour un club ClubElo
+      (`clubelo_club`, `clubelo_country`), délimitée par `rating_from_date` /
+      `rating_to_date`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - clubelo_club
+              - clubelo_country
+              - rating_from_date
+    columns:
+      - name: clubelo_club
+        description: >
+          Nom du club tel que publié par ClubElo — ne correspond pas forcément au
+          nom Transfermarkt (abréviations, translittérations différentes). Voir
+          `clubelo_club_mapping` (seed) pour la jointure vers `dim_club.club_id`.
+        data_tests:
+          - not_null
+      - name: elo
+        description: Rating Elo du club pendant cette période.
+        data_tests:
+          - not_null

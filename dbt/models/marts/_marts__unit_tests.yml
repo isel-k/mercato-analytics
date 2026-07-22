@@ -42,12 +42,18 @@ unit_tests:
           - transfer_id: "t1"
             market_value_at_spell_end: 2000000
             market_value_at_spell_end_date: "2023-12-01"
+      - input: ref('int_transfers__club_elo_at_transfer')
+        rows:
+          - transfer_id: "t1"
+            from_club_elo: 1500
+            to_club_elo: 1600
     expect:
       rows:
         - transfer_id: "t1"
           roi_financier: 0.2
           value_gained_absolute: 200000
           cost_per_goal_contribution: 100000
+          club_elo_delta: 100
 
   - name: test_fct_transfer_roi_free_transfer
     description: >
@@ -92,12 +98,18 @@ unit_tests:
           - transfer_id: "t2"
             market_value_at_spell_end: 600000
             market_value_at_spell_end_date: "2023-12-01"
+      - input: ref('int_transfers__club_elo_at_transfer')
+        rows:
+          - transfer_id: "t2"
+            from_club_elo: 1500
+            to_club_elo: 1400
     expect:
       rows:
         - transfer_id: "t2"
           roi_financier: null
           value_gained_absolute: 100000
           cost_per_goal_contribution: 0
+          club_elo_delta: -100
 
   - name: test_fct_transfer_roi_no_performance
     description: >
@@ -140,9 +152,12 @@ unit_tests:
           - transfer_id: "t3"
             market_value_at_spell_end: 1200000
             market_value_at_spell_end_date: "2023-12-01"
+      - input: ref('int_transfers__club_elo_at_transfer')
+        rows: []
     expect:
       rows:
         - transfer_id: "t3"
           roi_financier: -0.7
           value_gained_absolute: -700000
           cost_per_goal_contribution: null
+          club_elo_delta: null

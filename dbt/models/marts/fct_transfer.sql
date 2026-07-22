@@ -16,6 +16,10 @@ market_value_at_spell_end as (
     select * from {{ ref('int_transfers__market_value_at_spell_end') }}
 ),
 
+club_elo as (
+    select * from {{ ref('int_transfers__club_elo_at_transfer') }}
+),
+
 joined as (
     select
         transfers.transfer_id,
@@ -35,11 +39,14 @@ joined as (
         performance.assists as assists_during_spell,
         performance.minutes_played as minutes_played_during_spell,
         performance.yellow_cards as yellow_cards_during_spell,
-        performance.red_cards as red_cards_during_spell
+        performance.red_cards as red_cards_during_spell,
+        club_elo.from_club_elo,
+        club_elo.to_club_elo
     from transfers
     inner join spells on transfers.transfer_id = spells.transfer_id
     left join performance on transfers.transfer_id = performance.transfer_id
     left join market_value_at_spell_end on transfers.transfer_id = market_value_at_spell_end.transfer_id
+    left join club_elo on transfers.transfer_id = club_elo.transfer_id
 ),
 
 final as (
@@ -53,7 +60,12 @@ final as (
         market_value_at_spell_end - market_value_at_transfer - transfer_fee
             as value_gained_absolute,
         transfer_fee
-        / nullif(goals_during_spell + assists_during_spell, 0) as cost_per_goal_contribution
+        / nullif(goals_during_spell + assists_during_spell, 0) as cost_per_goal_contribution,
+        -- positive = moved to a stronger club by ClubElo rating, negative = a
+        -- step down. Null whenever either side has no ClubElo match — non-
+        -- European clubs (no coverage at all) or a name the matching seed
+        -- didn't resolve (~70% of dim_club is covered — see ARCHITECTURE.md).
+        to_club_elo - from_club_elo as club_elo_delta
     from joined
 )
 

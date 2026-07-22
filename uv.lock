@@ -987,6 +987,11 @@ dependencies = [
     { name = "sqlfluff-templater-dbt" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "rapidfuzz" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "dbt-snowflake", specifier = ">=1.9" },
@@ -996,6 +1001,9 @@ requires-dist = [
     { name = "sqlfluff", specifier = ">=3.2" },
     { name = "sqlfluff-templater-dbt", specifier = ">=3.2" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "rapidfuzz", specifier = ">=3.14.5" }]
 
 [[package]]
 name = "metricflow"

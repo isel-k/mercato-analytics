@@ -1,0 +1,31 @@
+version: 2
+
+seeds:
+  - name: clubelo_club_mapping
+    description: >
+      Jointure `dim_club.club_id` ↔ nom de club ClubElo, résolue par correspondance
+      approximative (rapidfuzz `token_set_ratio` sur le nom normalisé, filtré par
+      pays via `stg_transfermarkt__competitions`) puis corrigée manuellement pour
+      les clubs mal appariés par l'algorithme (ex. abréviations comme "Man City",
+      noms composés comme "Mönchengladbach", homonymes comme "Real" vs "Atlético").
+      Ne couvre que ~70% de `dim_club` : ClubElo ne suit que le football européen,
+      et l'algorithme n'atteint pas 100% de rappel même sur le sous-ensemble
+      européen (seuil de confiance à 0.75 pour limiter les faux positifs plutôt que
+      maximiser la couverture). Voir `ARCHITECTURE.md` pour la méthode complète.
+    config:
+      column_types:
+        club_id: integer
+    columns:
+      - name: club_id
+        description: Référence vers `dim_club.club_id`.
+        data_tests:
+          - unique
+          - not_null
+      - name: clubelo_club
+        description: Nom du club tel que publié par ClubElo — clé de jointure vers `stg_clubelo__ratings.clubelo_club`.
+        data_tests:
+          - not_null
+      - name: clubelo_country
+        description: Code pays ClubElo (3 lettres) — clé de jointure vers `stg_clubelo__ratings.clubelo_country`.
+        data_tests:
+          - not_null

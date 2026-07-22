@@ -286,6 +286,51 @@ Kaggle version (673, 2026-07-11) — so this isn't a staleness issue, and not so
 fixable in our own pipeline; it's an upstream bug worth flagging to
 `dcaribou/transfermarkt-datasets` directly rather than working around silently.
 
+### 13. ClubElo for club strength, with an honest ~70% match rate
+
+`fct_transfer.club_elo_delta` (`to_club_elo - from_club_elo`) measures whether a
+transfer was a step up or down in club quality — something neither Transfermarkt
+nor football-data.org expresses at all. Sourced from
+[ClubElo](http://clubelo.com/) (`ingestion/clubelo/`, free, no auth, European
+football only, tracked since 1939).
+
+**Why this matters, and why it's incomplete:** ClubElo doesn't cover South
+American, North American (MLS), Asian, or Middle Eastern clubs at all — about a
+quarter of `dim_club` can never match, full stop. Worse, ClubElo also uses its own
+club naming (abbreviations like "Man City", compound-name splits like "Gladbach"
+for Mönchengladbach, transliterations like "Moskva" for Moscow), so there's no
+direct key to join on. `dbt/seeds/clubelo_club_mapping.csv` resolves this with
+`rapidfuzz.token_set_ratio` on normalized names (country-scoped using
+`stg_transfermarkt__competitions`), with real correctness bugs hit and fixed along
+the way — worth recording because they'd bite any club-name matcher, not just this
+one:
+
+- A naive stopword list that strips generic club-type words (`fc`, `cf`, `club`)
+  also stripped **`real`** and **`atletico`**, making "Atlético de Madrid" and
+  "Real Madrid" both normalize to just `"madrid"` — a perfect but completely wrong
+  match. Fixed by keeping any word that distinguishes otherwise-identical names
+  (`real`, `atletico`, `athletic`, `sporting`, `united`, `deportivo`, `racing`...)
+  out of the stopword list; only pure legal-entity suffixes get stripped.
+- A "substring containment" bonus (for compound names like "Mönchengladbach" vs
+  "Gladbach") backfired the same way: "Fortuna Düsseldorf" matched "Fortuna Köln"
+  — a different club — because they share the generic word "Fortuna". Removed the
+  bonus rather than trying to special-case around it.
+- Plain character-similarity scoring (`difflib.SequenceMatcher`) rewards matching
+  *length* as much as matching *content*, so "Atlético Madrid" scored higher
+  against the wrong reserve-team candidate "Atletico B" than against the correct
+  "Atletico". Switched to `rapidfuzz.token_set_ratio` (token-set based, not
+  character-position based) and added an explicit guard that a reserve/youth-team
+  marker (`b`, `ii`, `u21`...) must match on both sides or not at all.
+
+Even after all that, the automated matcher doesn't recognize acronyms it can't
+expand ("QPR" vs "Queens Park Rangers") — a handful of well-known clubs the
+algorithm missed or got wrong were fixed via a small, individually-verified
+override list rather than tuned around further; scores below 0.75 are left
+unmatched rather than guessed. Net result: 560 of 796 clubs (~70%) resolve, all
+of them spot-checked, none of them silently wrong as far as this review could
+tell — a smaller, correct signal beats a complete, unreliable one, same principle
+as decision 12 above.
+
 ## Tech stack
 
 | Layer | Tool | Notes |

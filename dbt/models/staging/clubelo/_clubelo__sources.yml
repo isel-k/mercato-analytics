@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: clubelo
+    description: >
+      Ratings de force Elo des clubs européens (ClubElo, clubelo.com), mis à jour en
+      continu depuis 1939. Couvre uniquement le football européen — aucun club
+      d'Amérique du Sud, d'Amérique du Nord (MLS), d'Asie ou du Moyen-Orient.
+    database: raw
+    schema: raw_clubelo
+    config:
+      loaded_at_field: "to_timestamp_ntz(_dlt_load_id::number(38,0))"
+      freshness:
+        warn_after: { count: 7, period: day }
+        error_after: { count: 30, period: day }
+    tables:
+      - name: ratings
+        description: Une ligne par période de rating constant pour un club (From/To).
+      - name: discovered_clubs
+        description: >
+          Liste des clubs suivis par ClubElo à un moment ou un autre depuis 1996
+          (référentiel de découverte, pas une table métier — voir
+          `dbt/seeds/clubelo_club_mapping.csv` pour la jointure vers `dim_club`).

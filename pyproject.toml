@@ -11,3 +11,8 @@ dependencies = [
     "soccerdata>=1.8",
     "kagglehub>=0.3",
 ]
+
+[dependency-groups]
+dev = [
+    "rapidfuzz>=3.14.5",
+]
