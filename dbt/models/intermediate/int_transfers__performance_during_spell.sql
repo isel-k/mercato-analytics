@@ -12,6 +12,10 @@ appearances as (
     select * from {{ ref('stg_transfermarkt__appearances') }}
 ),
 
+games as (
+    select * from {{ ref('stg_transfermarkt__games') }}
+),
+
 appearances_during_spell as (
     select
         spells.transfer_id,
@@ -20,7 +24,8 @@ appearances_during_spell as (
         appearances.assists,
         appearances.minutes_played,
         appearances.yellow_cards,
-        appearances.red_cards
+        appearances.red_cards,
+        games.season
     from spells
     left join appearances
         on
@@ -31,12 +36,19 @@ appearances_during_spell as (
                 spells.spell_end_date is null
                 or spells.spell_end_date > appearances.appearance_date
             )
+    left join games on appearances.game_id = games.game_id
 ),
 
 aggregated as (
     select
         transfer_id,
         count(appearance_id) as matches_played,
+        -- seasons_played, not just matches_played: a long-tenured, non-scoring
+        -- player (a holding midfielder, say) reads as a poor signing by
+        -- roi_financier (market value declines with age) and by
+        -- cost_per_goal_contribution (few goals/assists) alike — neither
+        -- captures "stayed 10+ seasons and was clearly worth keeping".
+        count(distinct season) as seasons_played,
         coalesce(sum(goals), 0) as goals,
         coalesce(sum(assists), 0) as assists,
         coalesce(sum(minutes_played), 0) as minutes_played,

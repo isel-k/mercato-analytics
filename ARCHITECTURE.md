@@ -458,6 +458,73 @@ result (a small value *decline* during the actual Chelsea spell, with the sale
 fee still landing above his most recent valuation) that matches Cucurella's
 real, public transfer history.
 
+### 16. Longevity and titles won during the spell — because `roi_financier` alone makes Modric look like a bad transfer
+
+Prompted directly by the user: "Real Madrid lost money on Modric? I don't think
+so — he played for years and won a ton of trophies." Both existing indicators
+are structurally blind to exactly this profile: `roi_financier` penalizes a
+player who ages at the club (market value declines with age, independent of
+how good a signing they were), and `cost_per_goal_contribution` penalizes a
+non-scoring profile (a deep-lying midfielder, a centre-back). A player can look
+like a poor transfer by both existing indicators while being one of the best
+signings in football history.
+
+Added two more indicators, kept separate (same philosophy as `roi_financier` /
+`cost_per_goal_contribution` — no merged score):
+
+- **`seasons_played_during_spell` / `cost_per_season`**: extended
+  `int_transfers__performance_during_spell` to also join
+  `stg_transfermarkt__games` (via `appearances.game_id`) for `season`, and
+  count distinct seasons — cheap, no new data needed.
+- **`league_titles_during_spell` / `cup_titles_during_spell`**: none of the 3
+  sources (Transfermarkt, football-data.org, ClubElo) has a trophies table, so
+  this is *derived* from `games`/`club_games`/`competitions`, already in RAW.
+  Deliberately scoped to a manually-verified allowlist
+  (`dbt/seeds/competition_champion_scope.csv`: the "big five" leagues + their
+  main domestic cup + Portugal/Netherlands + Champions League/Europa
+  League/Conference League), not a global derivation — champions in
+  competitions decided by a post-season playoff (Belgium's Pro League,
+  confirmed via its `play_off` sub-competitions in `competitions`) can't be
+  read off the final league table, and getting that wrong silently would be
+  worse than not covering that league at all. Every competition in the
+  allowlist was checked before being added: exactly one match per season with
+  `round = 'Final'` (`int_competitions__season_champions`), including
+  shootout-decided finals — Transfermarkt already folds the penalty score into
+  `home_club_goals`/`away_club_goals` (2016 Champions League final shows `6:4`,
+  not a `1:1` draw), so no shootout-handling logic was needed. League champions
+  use `club_games.own_position = 1` at the season's final matchday (parsed from
+  `round`, always `"<N>. Matchday"` across the 7 scoped leagues) — spot-checked
+  against real title history (La Liga 2012–2025, exact match) before trusting
+  it.
+
+A title counts if the deciding match falls inside the player's spell interval
+(`int_transfers__titles_during_spell`, same `[spell_start_date, spell_end_date)`
+logic as `int_transfers__performance_during_spell`) — it does not require the
+player to have actually played that season, matching how a squad player still
+gets a winner's medal in real life.
+
+**Validated the mechanism against real history, and found a bigger data gap in
+the process.** Modric himself has **zero** rows in `fct_transfer` — same gap
+as Cucurella (decision 15), not a bug in the new feature. Checking further:
+only ~4,345 of `dim_player`'s ~50,000 players (under 9%) have *any* row in
+`stg_transfermarkt__transfers` — this Kaggle snapshot's transfer history is far
+sparser than decisions 14/15 implied, and it isn't limited to recent departures
+from specific big clubs; it also swallows some of the most documented legends
+in football (Sergio Ramos, Xavi, Casillas, Piqué, Benzema, Thiago Silva — all
+absent). Every ROI indicator on `fct_transfer`, not just the two added here,
+inherits this ceiling.
+
+Where the data does exist, the derivation checks out exactly against real
+history: Toni Kroos (Real Madrid, signed 2014) shows 9 seasons, 4 league titles
+and 6 cups — matching his real 4 La Liga titles + 5 Champions Leagues + 1 Copa
+del Rey. Joel Ward (Crystal Palace) and Iker Muniain (Athletic Bilbao) each show
+exactly 1 cup title — both clubs' real, well-known, long-awaited first major
+trophies in this exact era. Extending this same mechanism to
+`fct_wikipedia_transfer` (which already exists specifically to work around
+`fct_transfer`'s gaps for recent departures) is the natural next step if this
+data-sparsity finding turns out to matter for the players actually being
+looked up — not done in this pass, to keep scope to what was asked.
+
 ## Tech stack
 
 | Layer | Tool | Notes |

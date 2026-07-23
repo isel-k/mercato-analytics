@@ -48,6 +48,41 @@ models:
           - unique
           - not_null
 
+  - name: int_competitions__season_champions
+    description: >
+      Une ligne par titre remporté (championnat ou coupe), pour les seules
+      compétitions listées dans le seed `competition_champion_scope` (allowlist
+      vérifiée, pas une couverture mondiale — voir `ARCHITECTURE.md` décision 16).
+      Champion de championnat : club en `own_position = 1` à la dernière journée
+      de la saison. Champion de coupe : club avec `is_win = true` au match
+      `round = 'Final'` de la saison (score déjà "shootout-aware" dans la source).
+    columns:
+      - name: competition_id
+        data_tests:
+          - not_null
+      - name: season
+        data_tests:
+          - not_null
+      - name: title_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["league", "cup"]
+          - not_null
+
+  - name: int_transfers__titles_during_spell
+    description: >
+      Une ligne par transfert, comptant les titres (championnat/coupe) remportés
+      par le club acquéreur pendant que le joueur y était sous contrat — le match
+      décisif doit tomber dans `[spell_start_date, spell_end_date)`, sans exiger
+      que le joueur ait effectivement joué cette saison (cf. `int_players__club_spells`
+      et `ARCHITECTURE.md` décision 16).
+    columns:
+      - name: transfer_id
+        data_tests:
+          - unique
+          - not_null
+
   - name: int_wikipedia_transfers__value_trajectory
     description: >
       Pour chaque ligne de `fct_wikipedia_transfer`, résout le joueur (nom +

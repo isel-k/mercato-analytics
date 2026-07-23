@@ -1,0 +1,16 @@
+competition_id,competition_name,champion_method
+ES1,LaLiga,league_table
+GB1,Premier League,league_table
+FR1,Ligue 1,league_table
+L1,Bundesliga,league_table
+IT1,Serie A,league_table
+PO1,Liga Portugal,league_table
+NL1,Eredivisie,league_table
+CDR,Copa del Rey,cup_final
+FAC,FA Cup,cup_final
+DFB,DFB-Pokal,cup_final
+CIT,Coppa Italia,cup_final
+NLP,KNVB Beker,cup_final
+CL,UEFA Champions League,cup_final
+EL,UEFA Europa League,cup_final
+UCOL,UEFA Conference League,cup_final

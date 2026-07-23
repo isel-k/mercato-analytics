@@ -110,6 +110,34 @@ models:
           `to_club_elo - from_club_elo` : positif si le joueur rejoint un club plus
           fort selon ClubElo, négatif sinon. Nul si `from_club_elo` ou
           `to_club_elo` est nul.
+      - name: seasons_played_during_spell
+        description: >
+          Nombre de saisons distinctes avec au moins une apparition pendant le
+          spell. Ajouté pour ne pas juger un transfert uniquement sur
+          `roi_financier` (défavorable par construction à un joueur qui vieillit
+          au club) ou `cost_per_goal_contribution` (défavorable à un profil
+          défensif/relayeur) — voir `ARCHITECTURE.md` décision 16.
+      - name: cost_per_season
+        description: >
+          `transfer_fee / seasons_played_during_spell`. Nul si le joueur n'a joué
+          aucune saison enregistrée pendant le spell. Complète
+          `cost_per_goal_contribution` sans en dépendre — un joueur avec 0
+          contribution mais 10 saisons a un `cost_per_season` très bas malgré un
+          `cost_per_goal_contribution` non défini.
+      - name: league_titles_during_spell
+        description: >
+          Nombre de titres de championnat remportés par le club acquéreur pendant
+          que le joueur y était sous contrat (`int_transfers__titles_during_spell`),
+          limité aux compétitions du seed `competition_champion_scope` — pas une
+          couverture mondiale, voir `ARCHITECTURE.md` décision 16. Toujours défini
+          (0 si aucun titre ou si aucune des compétitions suivies ne concerne ce
+          club), jamais nul.
+        data_tests:
+          - not_null
+      - name: cup_titles_during_spell
+        description: Même logique que `league_titles_during_spell`, pour les coupes du seed (domestiques + Ligue des Champions/Europa/Conference).
+        data_tests:
+          - not_null
 
   - name: dim_team
     description: >

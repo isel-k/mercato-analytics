@@ -20,6 +20,10 @@ club_elo as (
     select * from {{ ref('int_transfers__club_elo_at_transfer') }}
 ),
 
+titles as (
+    select * from {{ ref('int_transfers__titles_during_spell') }}
+),
+
 joined as (
     select
         transfers.transfer_id,
@@ -35,18 +39,22 @@ joined as (
         market_value_at_spell_end.market_value_at_spell_end,
         market_value_at_spell_end.market_value_at_spell_end_date,
         performance.matches_played as matches_played_during_spell,
+        performance.seasons_played as seasons_played_during_spell,
         performance.goals as goals_during_spell,
         performance.assists as assists_during_spell,
         performance.minutes_played as minutes_played_during_spell,
         performance.yellow_cards as yellow_cards_during_spell,
         performance.red_cards as red_cards_during_spell,
         club_elo.from_club_elo,
-        club_elo.to_club_elo
+        club_elo.to_club_elo,
+        coalesce(titles.league_titles_during_spell, 0) as league_titles_during_spell,
+        coalesce(titles.cup_titles_during_spell, 0) as cup_titles_during_spell
     from transfers
     inner join spells on transfers.transfer_id = spells.transfer_id
     left join performance on transfers.transfer_id = performance.transfer_id
     left join market_value_at_spell_end on transfers.transfer_id = market_value_at_spell_end.transfer_id
     left join club_elo on transfers.transfer_id = club_elo.transfer_id
+    left join titles on transfers.transfer_id = titles.transfer_id
 ),
 
 final as (
@@ -61,6 +69,11 @@ final as (
             as value_gained_absolute,
         transfer_fee
         / nullif(goals_during_spell + assists_during_spell, 0) as cost_per_goal_contribution,
+        -- fairer than cost_per_goal_contribution to a long-tenured player who
+        -- doesn't score/assist much (a defender, a holding midfielder) — see
+        -- ARCHITECTURE.md decision 16 (the Modric case that motivated this).
+        transfer_fee
+        / nullif(seasons_played_during_spell, 0) as cost_per_season,
         -- positive = moved to a stronger club by ClubElo rating, negative = a
         -- step down. Null whenever either side has no ClubElo match — non-
         -- European clubs (no coverage at all) or a name the matching seed

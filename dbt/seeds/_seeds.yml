@@ -29,3 +29,33 @@ seeds:
         description: Code pays ClubElo (3 lettres) — clé de jointure vers `stg_clubelo__ratings.clubelo_country`.
         data_tests:
           - not_null
+
+  - name: competition_champion_scope
+    description: >
+      Allowlist manuelle et vérifiée des compétitions pour lesquelles un champion
+      de saison peut être dérivé sans ambiguïté depuis `games`/`club_games` — pas
+      une couverture mondiale. Chaque ligne n'a été ajoutée qu'après vérification
+      directe (cf. `ARCHITECTURE.md` décision 16) : pour `cup_final`, qu'un match
+      par saison porte `round = 'Final'` (y compris les cas décidés aux tirs au
+      but — Transfermarkt inclut déjà les buts de la séance dans le score, ex.
+      finale C1 2016 Real Madrid 6:4 Atlético) ; pour `league_table`, que le
+      champion est bien décidé par le classement final et non par un playoff de
+      fin de saison (la Belgique, qui a un tel playoff, en est explicitement
+      exclue).
+    config:
+      column_types:
+        competition_id: varchar
+    columns:
+      - name: competition_id
+        description: Référence vers `stg_transfermarkt__competitions.competition_id`.
+        data_tests:
+          - unique
+          - not_null
+      - name: champion_method
+        description: >
+          `league_table` (dernière journée de championnat, `own_position = 1`) ou
+          `cup_final` (match `round = 'Final'`, `is_win = true`).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["league_table", "cup_final"]
