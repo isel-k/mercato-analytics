@@ -5,10 +5,12 @@ sidebar_position: 3
 
 Two indicators, deliberately kept separate rather than merged into a single score:
 **financial ROI** (market value gain during the spell at the club, relative to the
-fee paid) and **cost per contribution** (fee paid relative to goals + assists). For
-players still at the club, "value at spell end" is their most recently known market
-value, not necessarily today's — Transfermarkt doesn't re-value every player often,
-so each table below shows a **Valuation as of** date alongside it.
+fee paid) and **cost per contribution** (fee paid relative to goals + assists). Each
+list below is deliberately kept to the headline numbers — fee, ROI, performance —
+rather than every raw valuation; look up any player on [Player lookup](/players)
+for the full underlying detail (value at signing, value at spell end, and the date
+of that valuation, which isn't always recent — Transfermarkt doesn't re-value every
+player often).
 
 ```sql seasons
 select distinct
@@ -118,15 +120,11 @@ order by roi_financier desc
     <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
     <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
-    <Column id=to_club title="Club"/>
+    <Column id=to_club title="Club" width="140px" wrap=true/>
     <Column id=roi_financier title="Financial ROI" fmt=pct1
         contentType=colorscale colorScale={['#dc2626', '#f3f4f6', '#16a34a']}
         colorMid={0} colorMin={-1} colorMax={1} />
     <Column id=transfer_fee title="Fee" fmt=eur0/>
-    <Column id=transfer_date title="Transfer date"/>
-    <Column id=market_value_at_transfer title="Value at acquisition" fmt=eur0/>
-    <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
-    <Column id=market_value_at_spell_end_date title="Valuation as of"/>
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>
 </DataTable>
@@ -160,9 +158,8 @@ limit 12
 <DataTable data={cost_efficiency} rows=12>
     <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
-    <Column id=transfer_date title="Transfer date"/>
     <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
-    <Column id=to_club title="Club"/>
+    <Column id=to_club title="Club" width="140px" wrap=true/>
     <Column id=transfer_fee title="Fee" fmt=eur0/>
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>
@@ -213,12 +210,8 @@ limit 12
 <DataTable data={best_free_transfers} rows=12>
     <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
-    <Column id=transfer_date title="Transfer date"/>
     <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
-    <Column id=to_club title="Club"/>
-    <Column id=market_value_at_transfer title="Value at signing" fmt=eur0/>
-    <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
-    <Column id=market_value_at_spell_end_date title="Valuation as of"/>
+    <Column id=to_club title="Club" width="140px" wrap=true/>
     <Column id=value_gained_absolute title="Value gained" fmt=eur0/>
     <Column id=goals_during_spell title="Goals"/>
     <Column id=assists_during_spell title="Assists"/>

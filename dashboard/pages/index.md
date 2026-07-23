@@ -51,7 +51,17 @@ order by tc.club_name
 ```sql kpi_summary
 select
     count(*) as transfers_analyzed,
-    avg(f.roi_financier) as avg_roi_financier,
+    -- excludes transfers where market_value_at_spell_end = market_value_at_transfer
+    -- exactly: no fresher valuation was ever recorded after the signing, which
+    -- mechanically forces roi_financier to -100% (paid a fee, "gained" zero) —
+    -- a stale-data artifact, not a real outcome. ~19% of transfers hit this.
+    -- See ARCHITECTURE.md decision 17.
+    avg(case
+        when f.market_value_at_spell_end != f.market_value_at_transfer then f.roi_financier
+    end) as avg_roi_financier,
+    round(100.0 * sum(case
+        when f.market_value_at_spell_end = f.market_value_at_transfer then 1 else 0
+    end) / count(*), 0) as pct_stale_valuation,
     median(f.cost_per_goal_contribution) as median_cost_per_goal
 from mercato_analytics.fct_transfer f
 left join mercato_analytics.dim_club tc on tc.club_id = f.to_club_id
@@ -79,9 +89,16 @@ where f.roi_financier is not null
     fmt="eur0"
 />
 
-*`roi_financier` is a ratio, undefined for free transfers (fee = €0) — see
+*Two caveats worth reading before trusting that average: `roi_financier` is a
+ratio, undefined for free transfers (fee = €0) — see
 [Best free transfers](/financial-roi#best-free-transfers) for those, evaluated on
-absolute value gained instead.*
+absolute value gained instead. And by construction, it only turns positive when a
+player's value grows by **more** than the entire fee paid — a high bar most transfers
+don't clear, so a negative average here reflects that stringent definition, not "the
+transfer market loses money." {fmt(kpi_summary[0].pct_stale_valuation, 'num0')}% of
+transfers above are excluded from this average entirely: Transfermarkt never
+recorded a valuation after the signing, which would otherwise force `roi_financier`
+to exactly -100% regardless of what really happened.*
 
 ```sql hero_players
 select

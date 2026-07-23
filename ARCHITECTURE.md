@@ -535,6 +535,33 @@ David Alaba at Real Madrid shows 2 league titles + 3 cups (2 Ligas, 2
 Champions Leagues + 1 Copa del Rey); Mohamed Salah at Liverpool shows 2
 league titles + 2 cups (2 Premier Leagues, 1 Champions League + 1 FA Cup).
 
+### 17. Why the average `roi_financier` looks so bad — a stale-valuation artifact, plus a stringent metric by design
+
+A dashboard re-review surfaced a KPI that looked wrong on its face: "Average
+financial ROI: -5.8%" sitting right above hero cards showing individual
+transfers at +1,000%+. Investigated rather than dismissed as a rounding
+quirk — two real, separate causes, both worth knowing about before reading
+any aggregate of `roi_financier`:
+
+1. **A genuine data artifact.** For ~19% of transfers with a fee,
+   `market_value_at_spell_end` is exactly equal to `market_value_at_transfer`
+   — Transfermarkt never recorded a fresher valuation after the signing. That
+   forces `roi_financier` to exactly -100% (paid a fee, "gained" zero value)
+   regardless of what actually happened on the pitch. Not a real financial
+   loss, a missing-data artifact — the dashboard's KPI now excludes these rows
+   from the headline average rather than silently letting them drag it down
+   (`pages/index.md`, `kpi_summary` query), and says so in a footnote.
+2. **The metric itself sets a high bar, by design.** Even excluding that
+   artifact, the median is still deeply negative (~-95%, checked directly).
+   `roi_financier`'s formula requires the player's value to grow by **more
+   than the entire fee paid** to read positive — most transfers are priced at
+   roughly fair market value already, so anything short of "the fee was
+   basically free money" reads negative. This isn't a bug to fix (the metric
+   was deliberately defined this way, and changing it now would invalidate
+   the unit tests and every prior finding built on it) — it's a characteristic
+   to be upfront about, so a negative aggregate isn't misread as "the model is
+   broken" or "this project's data is wrong."
+
 ## Tech stack
 
 | Layer | Tool | Notes |

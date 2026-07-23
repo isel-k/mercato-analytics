@@ -102,10 +102,9 @@ order by club_elo_delta desc
 <DataTable data={elo_spectrum} rows=12>
     <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
-    <Column id=from_club title="From"/>
+    <Column id=from_club title="From" width="130px" wrap=true/>
     <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
-    <Column id=to_club title="To"/>
-    <Column id=transfer_date title="Transfer date"/>
+    <Column id=to_club title="To" width="130px" wrap=true/>
     <Column id=club_elo_delta title="Elo change"
         contentType=colorscale colorScale={['#dc2626', '#f3f4f6', '#16a34a']}
         colorMid={0} colorMin={-500} colorMax={500} />

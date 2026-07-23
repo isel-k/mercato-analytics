@@ -112,7 +112,7 @@ limit 20
     <Column id=image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
     <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=to_club />
-    <Column id=to_club title="Club"/>
+    <Column id=to_club title="Club" width="140px" wrap=true/>
     <Column id=current_market_value_in_eur title="Current value" fmt=eur0/>
     <Column id=transfer_date title="Date"/>
 </DataTable>
@@ -152,12 +152,10 @@ limit 30
     <Column id=player_image_url title=" " contentType=image height="28px" width="28px" alt=player_name />
     <Column id=player_name title="Player"/>
     <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=club_name />
-    <Column id=club_name title="Club"/>
-    <Column id=from_club title="From"/>
+    <Column id=club_name title="Club" width="140px" wrap=true/>
+    <Column id=from_club title="From" width="140px" wrap=true/>
     <Column id=transfer_date title="Date"/>
-    <Column id=transfer_type title="Type"/>
     <Column id=fee_amount title="Fee" fmt=eur0/>
-    <Column id=fee_currency title="Currency"/>
 </DataTable>
 
 ## Realized ROI — recent departures
@@ -282,18 +280,16 @@ order by value_gained_during_tenure desc
     <Column id=player_image_url title=" " contentType=image height="32px" width="32px" alt=player_name />
     <Column id=player_name title="Player"/>
     <Column id=crest_url title=" " contentType=image height="20px" width="20px" alt=sold_by />
-    <Column id=sold_by title="Sold by"/>
-    <Column id=sold_to title="To"/>
-    <Column id=transfer_date title="Date"/>
-    <Column id=value_at_arrival title="Value at arrival" fmt=eur0/>
-    <Column id=value_at_arrival_date title="as of"/>
-    <Column id=value_at_departure title="Value at departure" fmt=eur0/>
-    <Column id=value_at_departure_date title="as of"/>
-    <Column id=value_gained_during_tenure title="Value gained during spell" fmt=eur0
+    <Column id=sold_by title="Sold by" width="95px" wrap=true/>
+    <Column id=sold_to title="To" width="95px" wrap=true/>
+    <Column id=value_gained_during_tenure title="Value gained" fmt=eur0 wrapTitle=true
         contentType=colorscale colorScale={['#dc2626', '#f3f4f6', '#16a34a']}
         colorMid={0} colorMin={-70000000} colorMax={70000000} />
     <Column id=fee_amount title="Sale fee" fmt=eur0/>
-    <Column id=fee_vs_last_valuation title="Fee vs last valuation" fmt=eur0
+    <Column id=fee_vs_last_valuation title="vs. valuation" fmt=eur0 wrapTitle=true
         contentType=colorscale colorScale={['#dc2626', '#f3f4f6', '#16a34a']}
         colorMid={0} colorMin={-70000000} colorMax={70000000} />
 </DataTable>
+
+*Full valuation timeline (value at arrival/departure and their dates) for any of
+these players is on [Player lookup](/players).*

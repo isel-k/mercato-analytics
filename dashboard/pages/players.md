@@ -80,15 +80,14 @@ order by f.transfer_date desc
 {#if player_transfers.length}
 <DataTable data={player_transfers} rows=10>
     <Column id=from_crest title=" " contentType=image height="20px" width="20px" alt=from_club />
-    <Column id=from_club title="From"/>
+    <Column id=from_club title="From" width="140px" wrap=true/>
     <Column id=to_crest title=" " contentType=image height="20px" width="20px" alt=to_club />
-    <Column id=to_club title="To"/>
+    <Column id=to_club title="To" width="140px" wrap=true/>
     <Column id=transfer_date title="Date"/>
     <Column id=transfer_fee title="Fee" fmt=eur0/>
-    <Column id=market_value_at_transfer title="Value at signing" fmt=eur0/>
-    <Column id=market_value_at_spell_end title="Value at spell end" fmt=eur0/>
-    <Column id=market_value_at_spell_end_date title="Valuation as of"/>
-    <Column id=roi_financier title="Financial ROI" fmt=pct1
+    <Column id=market_value_at_transfer title="At signing" fmt=eur0/>
+    <Column id=market_value_at_spell_end title="At spell end" fmt=eur0/>
+    <Column id=roi_financier title="ROI" fmt=pct1
         contentType=colorscale colorScale={['#dc2626', '#f3f4f6', '#16a34a']}
         colorMid={0} colorMin={-1} colorMax={1} />
     <Column id=goals_during_spell title="Goals"/>
