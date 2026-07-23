@@ -216,3 +216,14 @@ models:
           `fee_amount - value_at_departure`, uniquement pour `direction = 'out'` :
           le club vendeur a-t-il vendu au-dessus ou en-dessous de la dernière
           valorisation connue du joueur ? Nul si l'un des deux manque.
+      - name: league_titles_during_tenure
+        description: >
+          Même indicateur que `fct_transfer.league_titles_during_spell`, adapté
+          aux départs (`direction = 'out'`) de cette table
+          (`int_wikipedia_transfers__titles_during_tenure`). Compté entre
+          `value_at_arrival_date` (approximation de la date d'arrivée, pas la
+          vraie date de signature) et `transfer_date`. Nul pour les arrivées et
+          pour les joueurs sans historique de valorisation résolu — voir
+          `ARCHITECTURE.md` décision 16.
+      - name: cup_titles_during_tenure
+        description: Même logique que `league_titles_during_tenure`, pour les coupes du seed `competition_champion_scope`.

@@ -98,3 +98,18 @@ models:
       - name: club_id
         data_tests:
           - not_null
+
+  - name: int_wikipedia_transfers__titles_during_tenure
+    description: >
+      Même logique que `int_transfers__titles_during_spell`, mais pour les
+      départs (`direction = 'out'`) de `int_wikipedia_transfers__value_trajectory` :
+      compte les titres (`int_competitions__season_champions`) dont la date
+      tombe entre `value_at_arrival_date` (la borne de début de tenure la plus
+      précise disponible ici — une approximation, pas la vraie date de
+      signature, cf. `ARCHITECTURE.md` décision 16) et `transfer_date`. Vide
+      pour les arrivées (`direction = 'in'`, pas encore de tenure) et pour les
+      joueurs sans historique de valorisation résolu.
+    columns:
+      - name: club_id
+        data_tests:
+          - not_null

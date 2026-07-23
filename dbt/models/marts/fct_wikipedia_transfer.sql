@@ -8,6 +8,10 @@ value_trajectory as (
     select * from {{ ref('int_wikipedia_transfers__value_trajectory') }}
 ),
 
+titles as (
+    select * from {{ ref('int_wikipedia_transfers__titles_during_tenure') }}
+),
+
 joined as (
     select
         transfers.club_id,
@@ -26,7 +30,9 @@ joined as (
         value_trajectory.value_at_arrival,
         value_trajectory.value_at_arrival_date,
         value_trajectory.value_at_departure,
-        value_trajectory.value_at_departure_date
+        value_trajectory.value_at_departure_date,
+        titles.league_titles_during_tenure,
+        titles.cup_titles_during_tenure
     from transfers
     left join value_trajectory
         on
@@ -35,6 +41,12 @@ joined as (
             and transfers.direction = value_trajectory.direction
             and transfers.transfer_date = value_trajectory.transfer_date
     left join {{ ref('dim_player') }} as players on value_trajectory.player_id = players.player_id
+    left join titles
+        on
+            transfers.club_id = titles.club_id
+            and transfers.player_name = titles.player_name
+            and transfers.direction = titles.direction
+            and transfers.transfer_date = titles.transfer_date
 )
 
 select

@@ -519,11 +519,21 @@ history: Toni Kroos (Real Madrid, signed 2014) shows 9 seasons, 4 league titles
 and 6 cups — matching his real 4 La Liga titles + 5 Champions Leagues + 1 Copa
 del Rey. Joel Ward (Crystal Palace) and Iker Muniain (Athletic Bilbao) each show
 exactly 1 cup title — both clubs' real, well-known, long-awaited first major
-trophies in this exact era. Extending this same mechanism to
-`fct_wikipedia_transfer` (which already exists specifically to work around
-`fct_transfer`'s gaps for recent departures) is the natural next step if this
-data-sparsity finding turns out to matter for the players actually being
-looked up — not done in this pass, to keep scope to what was asked.
+trophies in this exact era.
+
+**Extended to `fct_wikipedia_transfer` too** (`int_wikipedia_transfers__titles_during_tenure`),
+the same mechanism applied to recent departures for the big clubs
+`fct_transfer` under-covers — exactly the players this coverage gap hits
+hardest. Same join against `int_competitions__season_champions`, but the
+tenure start is approximated by `value_at_arrival_date` (the earliest known
+valuation at that club — not the real signing date, since these players'
+original acquisition transfer is usually missing too; see decision above) —
+a title won in the gap between the real signing and that first valuation
+snapshot would be missed. Only computed for `direction = 'out'` rows (an
+"in" row's tenure hasn't started). Checks out against real history too:
+David Alaba at Real Madrid shows 2 league titles + 3 cups (2 Ligas, 2
+Champions Leagues + 1 Copa del Rey); Mohamed Salah at Liverpool shows 2
+league titles + 2 cups (2 Premier Leagues, 1 Champions League + 1 FA Cup).
 
 ## Tech stack
 
